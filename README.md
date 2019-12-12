@@ -5,7 +5,7 @@ Provide some methods to manipulate Images, Mouse, Keyboard, Mouse, Microsoft Win
 
 ## Installation
 
-In order to use the the library we need to install the following nuGet packages.
+In order to use the the library you need to install the following nuGet packages.
 
 ```bash
 Install-Package Quellatalo.Nin.TheHands -Version 0.3.0
