@@ -1,6 +1,6 @@
 # Helpy
 
-Helpy is an RPA C# library inspire by PyAutoGuid. 
+Helpy is an RPA C# library inspired by PyAutoGuid. 
 Provide some methods to manipulate Images, Mouse, Keyboard, Mouse, Microsoft Windows and Excel files.
 
 ## Installation
