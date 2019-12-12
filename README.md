@@ -61,7 +61,7 @@ Rect region = ScreenRegions.Left();
 Rect image = Image.Find("some path", attempts:3,region: region);
 Mouse.ClickImage(image);
 ```
-Here we can find and Image on the screen providing the path of the image as **PNG** or **JPG** and also the region of the screen we want to look for the image using the **ScreenRegions** class. Notice that region and image are both Rect objects. The **Rect** class is just a custom **Rectangle** struct just to easy manipulation of objects. Images class provide two method to convert from **RectangleToRect** and **RectToRectangle**.
+Here you can find an Image on the screen providing the path of the image as **PNG** or **JPG** and also the region of the screen we want to look for the image using the **ScreenRegions** class. Notice that region and image are both Rect objects. The **Rect** class is just a custom **Rectangle** struct just to easy manipulation of objects. Images class provide two method to convert from **RectangleToRect** and **RectToRectangle**.
 
 A short way for the above code is
 ---
@@ -73,11 +73,11 @@ Manipulate multiple images
 ```C#
 Image.FindAll("some path", region: region);
 ```
-The above method works exactly like **Find** except it brings us and **IEnumerable** of **Rect** found in the screen or region provide.
+The above method works exactly like **Find** except it brings us and **IEnumerable** of **Rect** found in the screen or region provided.
 
 Shortcuts
 ---
-The class shortcuts provide us some easy way to make common windows Shortcuts, but you can also provide your own combination of keys to performs your shortcut.
+The class shortcuts provide you some easy way to make common windows Shortcuts, but you can also provide your own combination of keys to performs your shortcut.
 
 ```C#
 KeyBoard.HotKey(KEYCODE.ALT, KEYCODE.F4);
@@ -176,7 +176,6 @@ Window.GetWindow("window name");
 Window.GetWindowWithParcialName("window name");
 Window.GetWindows("Windows name");            
 Window.GetWindowsWithParcialName("window name");
-
 ```
 
 Explorer window
@@ -191,7 +190,7 @@ Window.GetExplorerWindow("window name");
 
 Window Object
 ---
-When we get the window as an instance of the class we can get some information about the window and also use the following methods to manipulate it.
+When you get the window as an instance of the class you can get some information about the window and also use the following methods to manipulate it.
 
 Properties
 ---
@@ -278,7 +277,7 @@ Excel.Create("path", rows: myData, sheetName: "name of sheet");
 
 Object to excel rows
 ---
-We can also use object to convert into valid excel rows
+You can also use object to convert into valid excel rows
 ```C#
 Excel file = new Excel();
 
@@ -297,7 +296,7 @@ Excel.CreateObj<Person>(...);
 Excel.WriteObj<Person>(...);
 ```
 
-By doing this we can add objects to the excel files, name of the variables inside object will be use as header for the file.
+By doing this you can add objects to the excel files, name of the variables inside object will be use as header for the file.
 
 
 Slitting and Joining
@@ -345,13 +344,13 @@ Excel class provide some method to **Clear** a sheet and **reset** a sheet, both
 
 countEmptyRows param
 ---
-Some of excel methods provided by this class have the countEmptyRows param, this is because closeXML library return rows even if those were delete in the file, so with that param set to true we can only take the rows that are being use by the file.
+Some of excel methods provided by this class have the countEmptyRows param, this is because closeXML library return rows even if those were delete in the file, so with that param set to true you can only take the rows that are being use by the file.
 
 
 
 Information about the Excel class
 ---
-If we want to get information like supported types or how many rows you can add into a sheet we can use the following properties
+If you want to get information like supported types or how many rows you can add into a sheet you can use the following properties
 
 
 ```C#
