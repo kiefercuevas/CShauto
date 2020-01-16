@@ -85,7 +85,7 @@ namespace Helpy
                         continue;
                     }
                     else
-                        return RectangleToRect(match.Rectangle);
+                        return region == null ? RectangleToRect(match.Rectangle) : FixCoordinates(currentRegion, match.Rectangle);
                 }
             }
             return null;
@@ -112,7 +112,7 @@ namespace Helpy
                         continue;
                     }
                     else
-                        return RectangleToRect(match.Rectangle);
+                        return region == null ? RectangleToRect(match.Rectangle) : FixCoordinates(currentRegion, match.Rectangle);
                 }
             }
             return null;
@@ -241,7 +241,7 @@ namespace Helpy
                 Area area = new Area(currentRegion);
                 IEnumerable<Quellatalo.Nin.TheEyes.Match> matches = area.FindAll(pattern);
                 foreach(Quellatalo.Nin.TheEyes.Match match in matches){
-                    results.Add(RectangleToRect(match.Rectangle));
+                    results.Add(region == null ? RectangleToRect(match.Rectangle) : FixCoordinates(currentRegion, match.Rectangle));
                 }
                 return results;
             }
@@ -258,9 +258,9 @@ namespace Helpy
                 Rectangle currentRegion = region == null ? RectToRectangle(ScreenRegions.Complete()) : RectToRectangle(region);
                 Area area = new Area(currentRegion);
                 IEnumerable<Quellatalo.Nin.TheEyes.Match> matches = area.FindAll(pattern);
-                foreach (Quellatalo.Nin.TheEyes.Match match in matches)
-                    results.Add(RectangleToRect(match.Rectangle));
-
+                foreach (Quellatalo.Nin.TheEyes.Match match in matches){
+                    results.Add(region == null ? RectangleToRect(match.Rectangle) : FixCoordinates(currentRegion, match.Rectangle));
+                }
                 return results;
             }
         }
@@ -707,6 +707,10 @@ namespace Helpy
             }
         }
 
+        private static Rect FixCoordinates(Rectangle firstRect, Rectangle secondRect)
+        {
+            return new Rect(firstRect.X + secondRect.X, firstRect.Y + secondRect.Y, secondRect.Width, secondRect.Height);
+        }
 
         private static void ExcecuteActionFindAll(ImageInfo info, KeyValuePair<string,Bitmap> image)
         {
