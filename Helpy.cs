@@ -1827,16 +1827,16 @@ namespace Helpy
         /// <param name="waitInterval">Amount ot time it will stop the thread while waiting for the windows in each attemp</param>
         public static Window GetWindow(string name, int attempts = 1, int waitInterval = 1000)
         {
-            Process currentProcess = Process.GetProcessesByName(name).FirstOrDefault();
+            IEnumerable<Process> currentProcesses = Process.GetProcesses();
             int counter = 0;
-
             while (counter < attempts)
             {
-                if(currentProcess != null && currentProcess.MainWindowHandle != IntPtr.Zero)
-                    return new Window(currentProcess.MainWindowHandle, currentProcess.MainWindowTitle);
+                foreach (Process p in currentProcesses)
+                    if (p.MainWindowHandle != IntPtr.Zero && p.MainWindowTitle == name)
+                        return new Window(p.MainWindowHandle, p.MainWindowTitle);
 
                 Helpers.Wait(waitInterval);
-                currentProcess = Process.GetProcessesByName(name).FirstOrDefault();
+                currentProcesses = Process.GetProcesses();
                 counter++;
             }
             return null;
@@ -1848,26 +1848,22 @@ namespace Helpy
         /// <param name="waitInterval">Amount ot time it will stop the thread while waiting for the windows in each attemp</param>
         public static IEnumerable<Window> GetWindows(string name, int attempts = 1, int waitInterval = 1000)
         {
-            IEnumerable<Process> currentProcesses = Process.GetProcessesByName(name);
+            IEnumerable<Process> currentProcesses = Process.GetProcesses();
             ICollection<Window> windows = new List<Window>();
             int counter = 0;
-            if (currentProcesses.Count() == 0)
-                return new List<Window>();
-
             while (counter < attempts)
             {
                 foreach (Process p in currentProcesses)
-                    if (p.MainWindowHandle != IntPtr.Zero)
+                    if (p.MainWindowHandle != IntPtr.Zero && p.MainWindowTitle == name)
                         windows.Add(new Window(p.MainWindowHandle, p.MainWindowTitle));
 
                 if (windows.Count > 0)
                     break;
 
                 Helpers.Wait(waitInterval);
-                currentProcesses = Process.GetProcessesByName(name);
+                currentProcesses = Process.GetProcesses();
                 counter++;
             }
-
             return windows;
         }
 
