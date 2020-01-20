@@ -275,10 +275,37 @@ You can also create an excel file with
 Excel.Create("path", rows: myData, sheetName: "name of sheet");
 ```
 
-Object to excel rows
+Reading an Excel File
 ---
-You can also use object to convert into valid excel rows
+To read a file just use the static ***load*** method from Excel class 
 ```C#
+Excel myExcel = Excel.Load("path");
+//Getting the data
+IEnumerable<IDictionary<string,string>> data =  myExcel.Extract("sheetName");
+//Each row represents a dictionary collection where each key is a column header
+
+//Getting a part of the data
+IEnumerable<IDictionary<string,string>> data =  myExcel.Paginate(startRow:20,endRow:50,sheetName:"sheetName");
+
+```
+
+If we have a file with columns Name,Age,and LastName we can get the information like this 
+
+```C#
+foreach (IDictionary<string, string> row in data){
+    string Name = row["Name"];
+    Console.WriteLine(Name);
+}
+```
+Be careful that your file doesnt have duplicate column headers beacuse this will case
+that the first header is overwritten by the others until the last duplicate header. 
+
+
+Excel with objects
+---
+We can performs the above operations using objects instead of plain list of strings
+```C#
+
 Excel file = new Excel();
 
 //My person object
@@ -288,16 +315,21 @@ John.Age = 22;
 John.LastName = "Smith";
 
 //Appended an object to excel
-file.AppendObj<Person>(John,"sheet name to use");
+file.AppendFromObject<Person>(John,"sheet name to use");
 file.Save();
 
+//Reading the data
+IEnumerable<Person> people = file.ExtractFromObject<Person>(...);
+
+//Reading part of the data
+IEnumerable<Person> people = file.PaginateFromObject<Person>(...);
+
 //Static methods
-Excel.CreateObj<Person>(...);
-Excel.WriteObj<Person>(...);
+Excel.CreateFromObject<Person>(...);
+Excel.WriteFromObject<Person>(...);
 ```
 
-By doing this you can add objects to the excel files, name of the variables inside object will be use as header for the file.
-
+By doing this you can add objects to the excel files, name of the properties inside the object will be use as ***header*** for the file or ***keys*** for rows.
 
 Slitting and Joining
 ---

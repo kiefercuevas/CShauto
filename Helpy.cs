@@ -1952,7 +1952,7 @@ namespace Helpy
         }
 
         /// <summary>
-        /// Get the active windows if posibble.
+        /// Get the active windows if possible.
         /// </summary>
         /// <returns></returns>
         public static Window GetActive()
@@ -2374,11 +2374,11 @@ namespace Helpy
             return dictList;
         }
 
-        ///<summary>Get all data of the current excel file sheet and cast it to an specified object if posibble</summary>
+        ///<summary>Get all data of the current excel file sheet and cast it to an specified object if possible</summary>
         /// <param name="sheetName">Name of the sheet to get the data, if null it will use the first sheet</param>
         /// <param name="customHeaders">Headers to use to reflect the objets variable names of your class</param>
         /// <param name="countEmptyRows">if is true, it will brings empty rows that where use in the file</param>
-        public IEnumerable<T> Extract<T>(string sheetName = null, IEnumerable<string> customHeaders = null, bool countEmptyRows = false) where T : new()
+        public IEnumerable<T> ExtractFromObject<T>(string sheetName = null, IEnumerable<string> customHeaders = null, bool countEmptyRows = false) where T : new()
         {
             IList<T> dictList = new List<T>();
             IXLWorksheet workSheet = string.IsNullOrWhiteSpace(sheetName) ? Workbook.Worksheet(1) : Workbook.Worksheet(sheetName);
@@ -2418,23 +2418,23 @@ namespace Helpy
         ///<summary>Get all data of the current excel file for all sheets as a list of list of objects, where each list represents a sheet</summary>
         /// <param name="customHeaders">Headers to use as keys to the dictionary that represends a row</param>
         /// <param name="countEmptyRows">If is true, it will brings empty rows that where use in the file</param>
-        public IEnumerable<IEnumerable<T>> ExtractAll<T>(IEnumerable<string> customHeaders = null, bool countEmptyRows = false) where T : new()
+        public IEnumerable<IEnumerable<T>> ExtractAllFromObject<T>(IEnumerable<string> customHeaders = null, bool countEmptyRows = false) where T : new()
         {
             ICollection<IEnumerable<T>> listOfList = new List<IEnumerable<T>>();
             foreach (string name in SheetNames)
             {
-                listOfList.Add(Extract<T>(name, customHeaders, countEmptyRows));
+                listOfList.Add(ExtractFromObject<T>(name, customHeaders, countEmptyRows));
             }
             return listOfList;
         }
 
         ///<summary>Get all data of the current excel file sheet as a list ob dictionaries starting and ending from the specified params</summary>
-        ///<param name="start">Row to start to take the data</param>
-        /// <param name="end">Row to stop to take the data</param>
+        ///<param name="startRow">Row to start to take the data</param>
+        /// <param name="endRow">Row to stop to take the data</param>
         /// <param name="sheetName">Name of the sheet to get the data, if null it will use the first sheet</param>
         /// <param name="customHeaders">Headers to use as keys to the dictionary that represends a row</param>
         /// <param name="countEmptyRows">If is true, it will brings empty rows that where use in the file</param>
-        public IEnumerable<IDictionary<string, string>> Paginate(int start, int end, string sheetName = null, IEnumerable<string> customHeaders = null, bool countEmptyRows = false)
+        public IEnumerable<IDictionary<string, string>> Paginate(int startRow, int endRow, string sheetName = null, IEnumerable<string> customHeaders = null, bool countEmptyRows = false)
         {
             ICollection<IDictionary<string, string>> dictList = new List<IDictionary<string, string>>();
             IXLWorksheet workSheet = !string.IsNullOrWhiteSpace(sheetName) ? Workbook.Worksheets.SingleOrDefault(w => w.Name.ToLower() == sheetName.ToLower()) : Workbook.Worksheet(1);
@@ -2446,7 +2446,7 @@ namespace Helpy
             if (firstRow != null)
             {
                 IList<string> headers = (customHeaders == null ? firstRow.Cells().Select(c => c.Value.ToString()) : customHeaders).ToList();
-                IEnumerable<IXLRow> rows = countEmptyRows ? workSheet.Rows(start, end) : workSheet.RowsUsed().Skip(start).Take(end);
+                IEnumerable<IXLRow> rows = countEmptyRows ? workSheet.Rows(startRow, endRow) : workSheet.RowsUsed().Skip(startRow).Take(endRow);
 
                 foreach (IXLRow row in rows.Skip(customHeaders == null ? 1 : 0))
                 {
@@ -2462,12 +2462,12 @@ namespace Helpy
         }
 
         ///<summary>Get all data of the current excel file for sheet as a list of objets starting and ending from the specified params</summary>
-        ///<param name="start">Row to start to take the data</param>
-        /// <param name="end">Row to stop to take the data</param>
+        ///<param name="startRow">Row to start to take the data</param>
+        /// <param name="endRow">Row to stop to take the data</param>
         /// <param name="sheetName">Name of the sheet to get the data, if null it will use the first sheet</param>
         /// <param name="customHeaders">Headers to use as keys to the dictionary that represends a row</param>
         /// <param name="countEmptyRows">If is true, it will brings empty rows that where use in the file</param>
-        public IEnumerable<T> Paginate<T>(int start, int end, string sheetName = null, IEnumerable<string> customHeaders = null, bool countEmptyRows = false) where T : new()
+        public IEnumerable<T> PaginateFromObject<T>(int startRow, int endRow, string sheetName = null, IEnumerable<string> customHeaders = null, bool countEmptyRows = false) where T : new()
         {
             IList<T> dictList = new List<T>();
             IXLWorksheet workSheet = string.IsNullOrWhiteSpace(sheetName) ? Workbook.Worksheet(1) : Workbook.Worksheet(sheetName);
@@ -2476,7 +2476,7 @@ namespace Helpy
             if (firstRow != null)
             {
                 IList<string> headers = (customHeaders == null ? firstRow.Cells().Select(c => c.GetString()) : customHeaders).ToList();
-                IEnumerable<IXLRow> rows = countEmptyRows ? workSheet.Rows(start, end) : workSheet.RowsUsed().Skip(start).Take(end);
+                IEnumerable<IXLRow> rows = countEmptyRows ? workSheet.Rows(startRow, endRow) : workSheet.RowsUsed().Skip(startRow).Take(endRow);
 
                 foreach (IXLRow row in rows.Skip(customHeaders == null ? 1 : 0))
                 {
@@ -2581,7 +2581,7 @@ namespace Helpy
         /// <param name="rows">Data to add to the new excel file as list of object with each object represents a row</param>
         /// <param name="headers">Titles of the excel file, if null it will start adding rows from the first file</param>
         /// <param name="sheetName">Name of the sheet to get the data, if null it will use the first sheet</param>
-        public static void CreateObj<T>(string path, IEnumerable<T> rows, string sheetName = null) where T : class
+        public static void CreateFromObject<T>(string path, IEnumerable<T> rows, string sheetName = null) where T : class
         {
             int rowIndex = 1;
             string folder = Path.GetDirectoryName(path);
@@ -2715,7 +2715,7 @@ namespace Helpy
         ///<summary>Add data to an excel file</summary>
         /// <param name="row">Data to add to the new excel file as and object</param>
         /// <param name="sheetName">Name of the sheet to get the data, if null it will use the first sheet</param>
-        public void AppendObj<T>(T row, string sheetName = null) where T : class
+        public void AppendFromObject<T>(T row, string sheetName = null) where T : class
         {
             IXLWorksheet workSheet = sheetName == null ? Workbook.Worksheet(1) : Workbook.Worksheet(sheetName);
             int rowIndex = workSheet.LastRowUsed().RowNumber() + 1;
@@ -2744,7 +2744,7 @@ namespace Helpy
         ///<summary>Add data to an excel file</summary>
         /// <param name="rows">Data to add to the new excel file as a list of objects where each object represents a row</param>
         /// <param name="sheetName">Name of the sheet to get the data, if null it will use the first sheet</param>
-        public void AppendObj<T>(IEnumerable<T> rows, string sheetName = null) where T : class
+        public void AppendFromObject<T>(IEnumerable<T> rows, string sheetName = null) where T : class
         {
             IXLWorksheet workSheet = sheetName == null ? Workbook.Worksheets.First() : Workbook.Worksheets.Worksheet(sheetName);
             int rowIndex = workSheet.LastRowUsed().RowNumber() + 1;
@@ -2888,7 +2888,7 @@ namespace Helpy
         /// <param name="obj">Object to use to compare if sheet contains the object variables</param>
         /// <param name="sheetName">Name of the sheet to get the data, if null it will use the first sheet</param>
         /// <param name="exactMatch">If is true it will validate the string without case sensitive</param>
-        public bool HasHeader<T>(T obj,string sheetName = null, bool exactMatch = true) where T : class
+        public bool HasHeaderFromObject<T>(T obj, string sheetName = null, bool exactMatch = true) where T : class
         {
             IXLWorksheet workSheet = string.IsNullOrWhiteSpace(sheetName) ? Workbook.Worksheet(1) : Workbook.Worksheet(sheetName);
             IXLRow firstRow = workSheet.FirstRow();
@@ -2978,7 +2978,7 @@ namespace Helpy
         /// <param name="path">Filepath of the new excel file</param>
         /// <param name="rows">Data to add to the new excel file as a list of objects where each object represents a row</param>
         /// <param name="sheetName">Name of the sheet to get the data, if null it will use the first sheet</param>
-        public static void WriteObj<T>(string path, IEnumerable<T> rows, string sheetName = null) where T : class
+        public static void WriteFromObject<T>(string path, IEnumerable<T> rows, string sheetName = null) where T : class
         {
             ValidateFile(path);
 
