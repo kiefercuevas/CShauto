@@ -331,7 +331,7 @@ Excel.WriteFromObject<Person>(...);
 
 By doing this you can add objects to the excel files, name of the properties inside the object will be use as ***header*** for the file or ***keys*** for rows.
 
-Slitting and Joining
+Splitting and Joining
 ---
 This class also provide some instance and static method to split a file into multiple ones an also join them into one.
 
