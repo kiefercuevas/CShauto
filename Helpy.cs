@@ -737,6 +737,63 @@ namespace Helpy
             }
         }
 
+        /// <summary>
+        /// HightLight a given region with the specified color
+        /// </summary>
+        /// <param name="rectToHightLight">The region to hightLight</param>
+        /// <param name="hightLightColor">The color to use to fill the region</param>
+        private static void HigtLight(Rect rectToHightLight, Color hightLightColor)
+        {
+            Rectangle currentRegion = rectToHightLight == null ? RectToRectangle(ScreenRegions.Complete()) : RectToRectangle(rectToHightLight);
+            Area area = new Area(currentRegion);
+            area.Highlight(new SolidBrush(hightLightColor));
+        }
+
+        /// <summary>
+        /// HightLight a given region with the specified color and opacity
+        /// </summary>
+        /// <param name="rectToHightLight">The region to hightLight</param>
+        /// <param name="hightLightColor">The color to use to fill the region</param>
+        /// <param name="opacity">The opacity of the color</param>
+        public static void HightLight(Rect rectToHightLight, Color hightLightColor, int opacity)
+        {
+            Rectangle currentRegion = rectToHightLight == null ? RectToRectangle(ScreenRegions.Complete()) : RectToRectangle(rectToHightLight);
+            Area area = new Area(currentRegion);
+            area.Highlight(new SolidBrush(Color.FromArgb(opacity, hightLightColor)));
+        }
+
+        /// <summary>
+        /// HightLight a given region with the specified brush
+        /// </summary>
+        /// <param name="rectToHightLight">The region to hightLight</param>
+        /// <param name="brush">The brush to use to hightLight the given region</param>
+        public static void HightLight(Rect rectToHightLight, Brush brush)
+        {
+            Rectangle currentRegion = rectToHightLight == null ? RectToRectangle(ScreenRegions.Complete()) : RectToRectangle(rectToHightLight);
+            Area area = new Area(currentRegion);
+            area.Highlight(brush);
+        }
+
+        /// <summary>
+        /// HightLight a given region with the specified pen
+        /// </summary>
+        /// <param name="rectToHightLight">The region to hightLight</param>
+        /// <param name="pen">The pen to use to hightLight the given region</param>
+        public static void HightLight(Rect rectToHightLight, Pen pen)
+        {
+            Rectangle currentRegion = rectToHightLight == null ? RectToRectangle(ScreenRegions.Complete()) : RectToRectangle(rectToHightLight);
+            Area area = new Area(currentRegion);
+            area.Highlight(pen);
+        }
+
+        /// <summary>
+        /// Remove all hightLight from current screen
+        /// </summary>
+        public static void RemoveHightLight()
+        {
+            Area.ClearHighlight();
+        }
+
         private static Rect FixCoordinates(Rectangle firstRect, Rectangle secondRect)
         {
             return new Rect(firstRect.X + secondRect.X, firstRect.Y + secondRect.Y, secondRect.Width, secondRect.Height);
@@ -2291,7 +2348,6 @@ namespace Helpy
             /// </summary>
             ForceMinimize = 11
         }
-
         private string GetWindowClass(string windowClass)
         {
             List<string> values = new List<string>(){
@@ -3455,7 +3511,6 @@ namespace Helpy
             };
             Workbook.SaveAs(path, so);
         }
-
 
         private static bool IsValidExtension(string extension)
         {
