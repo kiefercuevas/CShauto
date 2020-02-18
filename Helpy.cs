@@ -742,7 +742,7 @@ namespace Helpy
         /// </summary>
         /// <param name="rectToHightLight">The region to hightLight</param>
         /// <param name="hightLightColor">The color to use to fill the region</param>
-        private static void HigLight(Rect rectToHightLight, Color hightLightColor)
+        private static void HighLight(Rect rectToHightLight, Color hightLightColor)
         {
             Rectangle currentRegion = rectToHightLight == null ? RectToRectangle(ScreenRegions.Complete()) : RectToRectangle(rectToHightLight);
             Area area = new Area(currentRegion);
