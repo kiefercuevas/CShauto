@@ -3663,11 +3663,11 @@ namespace Helpy
         //
         // Summary:
         //     PAGE UP key
-        PRIOR = 33,
+        PAGE_UP = 33,
         //
         // Summary:
         //     PAGE DOWN key
-        NEXT = 34,
+        PAGE_DOWN = 34,
         //
         // Summary:
         //     END key
