@@ -100,7 +100,7 @@ namespace Helpy
         {
             for (int i = 0; i <= attempts; i++)
             {
-                using (ImagePattern pattern = new ImagePattern(image))
+                using (ImagePattern pattern = new ImagePattern(new Bitmap(image)))
                 {
                     Rectangle currentRegion = region == null ? RectToRectangle(ScreenRegions.Complete()) : RectToRectangle(region);
                     Area area = new Area(currentRegion);
@@ -155,7 +155,7 @@ namespace Helpy
         {
             for (int i = 0; i <= attempts; i++)
             {
-                using (ImagePattern pattern = new ImagePattern(image))
+                using (ImagePattern pattern = new ImagePattern(new Bitmap(image)))
                 {
                     Rectangle currentRegion = region == null ? RectToRectangle(ScreenRegions.Complete()) : RectToRectangle(region);
                     Area area = new Area(currentRegion);
