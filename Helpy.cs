@@ -1374,6 +1374,38 @@ namespace Helpy
             return Position();
         }
 
+        /// <summary>
+        /// Move the cursor at the center of the image
+        /// </summary>
+        /// <param name="image">Image rect object to use</param>
+        public static Point MoveToImage(Rect image)
+        {
+            MouseHandler handler = new MouseHandler();
+            Point point = Center(image);
+            Move(point);
+
+            return Position();
+        }
+
+        /// <summary>
+        /// Look for and image at the given path and move the cursor at the center of the image
+        /// </summary>
+        /// <param name="path">Path of the image</param>
+        /// <param name="region">Region of the screen to look for the image, for more details look for ScreenRegions class</param>
+        public static Point MoveToImage(string path, Rect region = null)
+        {
+            Rect image = Image.Find(path, region: region);
+            MouseHandler handler = new MouseHandler();
+
+            if (image == null)
+                return new Point(-1, -1);
+
+            Point point = Center(image);
+            Move(point);
+
+            return Position();
+        }
+
         /// <summary>Performs an scroll an amount of ticks from its given position</summary>
         /// <param name="amount">Amount of ticks to scroll the wheel of the mouse</param>
         public static void Scroll(int amount = -500)
