@@ -2377,7 +2377,7 @@ namespace Helpy
         private XLWorkbook Workbook;
         public int LimitPerSheet { get; set; }
         ///<summary>Set the default limit for rows in an excel sheet</summary>
-        public static int DefaultLimit = 50000;
+        public static int DefaultLimit = 200000;
         ///<summary>Get or set the default name for an excel sheet</summary>
         public static string DefaultSheetName = "Sheet1";
         ///<summary>Get or set the default name for an excel file</summary>
