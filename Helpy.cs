@@ -966,7 +966,7 @@ namespace Helpy
         /// <summary>Move the mouse to a given point in the screen</summary>
         /// <param name="x">Horizontal coordinate to move</param>
         /// <param name="y">Vertical coordinate to move</param>
-        /// <param name="is_relative">If isRelativeis set to True, it will move the cursor starting from its current positions and not 
+        /// <param name="isRelative">If isRelativeis set to True, it will move the cursor starting from its current positions and not 
         /// from the beginning of the screen </param>
         public static bool Move(int x, int y, bool isRelative = false)
         {
@@ -986,7 +986,7 @@ namespace Helpy
 
         /// <summary>Move the mouse to the center of an image in the screen</summary>
         /// <param name="image">rect image object</param>
-        /// <param name="is_relative">If isRelativeis set to True, it will move the cursor starting from its current positions and not 
+        /// <param name="isRelative">If isRelativeis set to True, it will move the cursor starting from its current positions and not 
         /// from the beginning of the screen </param>
         public static bool Move(Rect image, bool isRelative = false)
         {
@@ -1007,7 +1007,7 @@ namespace Helpy
         /// <summary>Look for and image at the given path and move the cursor at the center of the image</summary>
         /// <param name="path">Path of the image</param>
         /// <param name="region">Region of the screen to look for the image, for more details look for ScreenRegions class</param>
-        /// <param name="is_relative">If isRelativeis set to True, it will move the cursor starting from its current positions and not 
+        /// <param name="isRelative">If isRelativeis set to True, it will move the cursor starting from its current positions and not 
         /// from the beginning of the screen </param>
         public static bool Move(string path, Rect region, bool isRelative = false)
         {
