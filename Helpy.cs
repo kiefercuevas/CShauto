@@ -945,13 +945,13 @@ namespace Helpy
 
         /// <summary>Move the mouse to a given point in the screen</summary>
         /// <param name="point">Point in the screen to move</param>
-        /// <param name="is_relative">If is_relative is set to True, it will move the cursor starting from its current positions and not 
+        /// <param name="isRelative">If isRelativeis set to True, it will move the cursor starting from its current positions and not 
         /// from the beginning of the screen </param>
-        public static bool Move(Point point, bool is_relative = false)
+        public static bool Move(Point point, bool isRelative = false)
         {
             MouseHandler handler = new MouseHandler();
             Point currenPosition = Position();
-            if (is_relative)
+            if (isRelative)
                 handler.Move(point);
             else
                 handler.MoveTo(new List<Point>() { currenPosition, point });
@@ -966,13 +966,13 @@ namespace Helpy
         /// <summary>Move the mouse to a given point in the screen</summary>
         /// <param name="x">Horizontal coordinate to move</param>
         /// <param name="y">Vertical coordinate to move</param>
-        /// <param name="is_relative">If is_relative is set to True, it will move the cursor starting from its current positions and not 
+        /// <param name="is_relative">If isRelativeis set to True, it will move the cursor starting from its current positions and not 
         /// from the beginning of the screen </param>
-        public static bool Move(int x, int y, bool is_relative = false)
+        public static bool Move(int x, int y, bool isRelative = false)
         {
             MouseHandler handler = new MouseHandler();
             Point currenPosition = Position();
-            if (is_relative)
+            if (isRelative)
                 handler.Move(x, y);
             else
                 handler.MoveTo(new List<Point>() { currenPosition, new Point(x, y) });
@@ -986,13 +986,13 @@ namespace Helpy
 
         /// <summary>Move the mouse to the center of an image in the screen</summary>
         /// <param name="image">rect image object</param>
-        /// <param name="is_relative">If is_relative is set to True, it will move the cursor starting from its current positions and not 
+        /// <param name="is_relative">If isRelativeis set to True, it will move the cursor starting from its current positions and not 
         /// from the beginning of the screen </param>
-        public static bool Move(Rect image, bool is_relative = false)
+        public static bool Move(Rect image, bool isRelative = false)
         {
             MouseHandler handler = new MouseHandler();
             Point currenPosition = Position();
-            if (is_relative)
+            if (isRelative)
                 handler.Move(Center(image));
             else
                 handler.MoveTo(new List<Point>() { currenPosition, Center(image) });
@@ -1007,9 +1007,9 @@ namespace Helpy
         /// <summary>Look for and image at the given path and move the cursor at the center of the image</summary>
         /// <param name="path">Path of the image</param>
         /// <param name="region">Region of the screen to look for the image, for more details look for ScreenRegions class</param>
-        /// <param name="is_relative">If is_relative is set to True, it will move the cursor starting from its current positions and not 
+        /// <param name="is_relative">If isRelativeis set to True, it will move the cursor starting from its current positions and not 
         /// from the beginning of the screen </param>
-        public static bool Move(string path, Rect region, bool is_relative = false)
+        public static bool Move(string path, Rect region, bool isRelative = false)
         {
             MouseHandler handler = new MouseHandler();
             Rect image = Image.Find(path, region: region);
@@ -1018,7 +1018,7 @@ namespace Helpy
                 return false;
 
             Point currenPosition = Position();
-            if (is_relative)
+            if (isRelative)
                 handler.Move(Center(image));
             else
                 handler.MoveTo(new List<Point>() { currenPosition, Center(image) });
