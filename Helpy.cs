@@ -31,8 +31,7 @@ namespace Helpy
             public Rect Rect { get; set; }
             public string ImgName { get; set; }
 
-            public Box(){}
-
+            public Box() { }
 
             public Box(Rect rect, string imgName)
             {
@@ -60,7 +59,7 @@ namespace Helpy
                 this.Region = region;
                 this.Status = status;
                 imgs = initList ? new List<Rect>() : null;
-                filenames = initList ? new List<string>() : null; 
+                filenames = initList ? new List<string>() : null;
             }
         }
 
@@ -80,7 +79,8 @@ namespace Helpy
                     Area area = new Area(currentRegion);
 
                     Quellatalo.Nin.TheEyes.Match match = area.Find(pattern);
-                    if (match == null){
+                    if (match == null)
+                    {
                         Thread.Sleep(waitInterval);
                         continue;
                     }
@@ -134,7 +134,8 @@ namespace Helpy
                     Area area = new Area(currentRegion);
 
                     Quellatalo.Nin.TheEyes.Match match = area.Find(pattern);
-                    if (match == null){
+                    if (match == null)
+                    {
                         Thread.Sleep(waitInterval);
                         continue;
                     }
@@ -173,10 +174,10 @@ namespace Helpy
         }
 
         /// <summary>Locate and image in the screen and amount of time and 
-        /// return the coordinates (X, Y, Width, height) of the image, timeout if 0, it will look for the image until it found</summary>
+        /// return the coordinates (X, Y, Width, height) of the image,if attempts is 0, it will look for the image until it found</summary>
         /// <param name="path">Path of the image to look for</param>
         /// <param name="region">Region of the screen to look for the image, for more details look for ScreenRegions class</param>
-        /// <param name="attempts">Amount of time to look for the image, return null if timeout *if attempts is -1 then it look until it founds the image*</param>
+        /// <param name="attempts">Amount of time to look for the image, return null if timeout *if attempts is 0 then it look until it founds the image*</param>
         ///<param name="waitInterval">Amount of time in milliseconds to wait for each attempts before starting to look for the image again</param>
         public static Rect FindUntil(string path, Rect region = null, int attempts = 0, int waitInterval = 1000)
         {
@@ -194,7 +195,8 @@ namespace Helpy
                     if (counter == attempts)
                         return result;
                 }
-                else{
+                else
+                {
                     Thread.Sleep(waitInterval);
                 }
             }
@@ -202,10 +204,10 @@ namespace Helpy
         }
 
         /// <summary>Locate and image in the screen and amount of time and 
-        /// return the coordinates (X, Y, Width, height) of the image, timeout if 0, it will look for the image until it found</summary>
+        /// return the coordinates (X, Y, Width, height) of the image,if timeout is 0, it will look for the image until it found</summary>
         /// <param name="image">image to look for</param>
         /// <param name="region">Region of the screen to look for the image, for more details look for ScreenRegions class</param>
-        /// <param name="attempts">Amount of time to look for the image, return null if timeout *if attempts is -1 then it look until it founds the image*</param>
+        /// <param name="attempts">Amount of time to look for the image, return null if timeout *if attempts is 0 then it look until it founds the image*</param>
         /// <param name="waitInterval">Amount of time in milliseconds to wait for each attempts before starting to look for the image again</param>
         public static Rect FindUntil(Bitmap image, Rect region = null, int attempts = 0, int waitInterval = 1000)
         {
@@ -240,7 +242,8 @@ namespace Helpy
                 Rectangle currentRegion = region == null ? RectToRectangle(ScreenRegions.Complete()) : RectToRectangle(region);
                 Area area = new Area(currentRegion);
                 IEnumerable<Quellatalo.Nin.TheEyes.Match> matches = area.FindAll(pattern);
-                foreach(Quellatalo.Nin.TheEyes.Match match in matches){
+                foreach (Quellatalo.Nin.TheEyes.Match match in matches)
+                {
                     results.Add(region == null ? RectangleToRect(match.Rectangle) : FixCoordinates(currentRegion, match.Rectangle));
                 }
                 return results;
@@ -258,7 +261,8 @@ namespace Helpy
                 Rectangle currentRegion = region == null ? RectToRectangle(ScreenRegions.Complete()) : RectToRectangle(region);
                 Area area = new Area(currentRegion);
                 IEnumerable<Quellatalo.Nin.TheEyes.Match> matches = area.FindAll(pattern);
-                foreach (Quellatalo.Nin.TheEyes.Match match in matches){
+                foreach (Quellatalo.Nin.TheEyes.Match match in matches)
+                {
                     results.Add(region == null ? RectangleToRect(match.Rectangle) : FixCoordinates(currentRegion, match.Rectangle));
                 }
                 return results;
@@ -279,15 +283,18 @@ namespace Helpy
             if (paths.Count() > maxImages)
                 throw new Exception("The paths quantity cannot be greater than maxImages");
 
-            foreach (string path in paths){
+            foreach (string path in paths)
+            {
                 ValidateImage(path);
                 Thread newThread = new Thread(() => ExcecuteActionFindFirst(imgInfo, path, currentBox));
                 newThread.IsBackground = true;
                 newThread.Start();
             }
 
-            while (imgInfo.Status){
-                if (attempts > 0){
+            while (imgInfo.Status)
+            {
+                if (attempts > 0)
+                {
                     Thread.Sleep(waitInterval);
                     counter += 1;
                     if (counter == attempts)
@@ -305,7 +312,7 @@ namespace Helpy
         /// <param name="region">Region of the screen to look for the image, for more details look for ScreenRegions class</param>
         /// <param name="maxImages">This param is use to limit the number of threads to use, if you have more threads feel free tu increase it</param>
         /// <param name="waitInterval">Amount of time in milliseconds to wait for each attempts before starting to look for the image again</param>
-        public static Box FindFirst(IEnumerable<KeyValuePair<string,Bitmap>> images, int attempts = 0, Rect region = null, int maxImages = 4, int waitInterval = 1000)
+        public static Box FindFirst(IEnumerable<KeyValuePair<string, Bitmap>> images, int attempts = 0, Rect region = null, int maxImages = 4, int waitInterval = 1000)
         {
             Box currentBox = new Box();
             ImageInfo imgInfo = new ImageInfo(true, region);
@@ -315,7 +322,7 @@ namespace Helpy
                 throw new Exception("The paths quantity cannot be greater than maxImages");
 
 
-            foreach (KeyValuePair<string,Bitmap> image in images)
+            foreach (KeyValuePair<string, Bitmap> image in images)
             {
                 Thread newThread = new Thread(() => ExcecuteActionFindFirst(imgInfo, image, currentBox));
                 newThread.IsBackground = true;
@@ -352,15 +359,18 @@ namespace Helpy
             if (paths.Count() > maxImages)
                 throw new Exception("The paths quantity cannot be greater than maxImages");
 
-            foreach (string path in paths){
+            foreach (string path in paths)
+            {
                 ValidateImage(path);
                 Thread newThread = new Thread(() => ExcecuteActionFindAll(imgInfo, path));
                 newThread.IsBackground = true;
                 newThread.Start();
             }
 
-            while (imgInfo.imgs.Count() < paths.Count()){
-                if (attempts > 0){
+            while (imgInfo.imgs.Count() < paths.Count())
+            {
+                if (attempts > 0)
+                {
                     Thread.Sleep(waitInterval);
                     counter += 1;
                     if (counter == attempts)
@@ -370,8 +380,9 @@ namespace Helpy
                     Thread.Sleep(waitInterval);
             }
 
-            for (int i = 0; i < imgInfo.imgs.Count; i++){
-                currentBoxes.Add(new Box(imgInfo.imgs[i],imgInfo.filenames[i]));
+            for (int i = 0; i < imgInfo.imgs.Count; i++)
+            {
+                currentBoxes.Add(new Box(imgInfo.imgs[i], imgInfo.filenames[i]));
             }
 
             return currentBoxes;
@@ -392,7 +403,7 @@ namespace Helpy
             if (images.Count() > maxImages)
                 throw new Exception("The paths quantity cannot be greater than maxImages");
 
-            foreach (KeyValuePair<string,Bitmap> image in images)
+            foreach (KeyValuePair<string, Bitmap> image in images)
             {
                 Thread newThread = new Thread(() => ExcecuteActionFindAll(imgInfo, image));
                 newThread.IsBackground = true;
@@ -439,7 +450,7 @@ namespace Helpy
             {
                 if (!columns.Contains(img.X))
                     columns.Add(img.X);
-                
+
                 if (!rows.Contains(img.Y))
                     rows.Add(img.Y);
             }
@@ -448,14 +459,14 @@ namespace Helpy
             columns.Sort();
 
             if (rowIndex >= 0 && (rowIndex > rows.Count))
-                throw new Exception(string.Format("Index {0} is out of range of founded rows quantity {1} ",rowIndex,rows.Count));
+                throw new Exception(string.Format("Index {0} is out of range of founded rows quantity {1} ", rowIndex, rows.Count));
 
             if (rowIndex >= 0 && (rowIndex > rows.Count))
                 throw new Exception(string.Format("Index {0} is out of range of founded columns quantity {1} ", colIndex, columns.Count));
 
             if (rowIndex >= 0 && colIndex >= 0)
                 return imgs.Where((img) => img.X == columns[colIndex] && img.Y == rows[rowIndex]);
-            else if(rowIndex >= 0 && colIndex < 0)
+            else if (rowIndex >= 0 && colIndex < 0)
                 return imgs.Where((img) => img.Y == rows[rowIndex]);
             else if (colIndex >= 0 && rowIndex < 0)
                 return imgs.Where((img) => img.X == columns[colIndex]);
@@ -527,7 +538,7 @@ namespace Helpy
             {
                 if (!columns.Contains(img.X))
                     columns.Add(img.X);
-                
+
                 if (!rows.Contains(img.Y))
                     rows.Add(img.Y);
             }
@@ -535,15 +546,15 @@ namespace Helpy
             rows.Sort();
             columns.Sort();
 
-            ValidateIndex(rowIndexRange,rows.Count,"rows");
-            ValidateIndex(colIndexRange,columns.Count,"columns");
+            ValidateIndex(rowIndexRange, rows.Count, "rows");
+            ValidateIndex(colIndexRange, columns.Count, "columns");
 
             if (rowIndexRange != null && colIndexRange != null)
-                return imgs.Where((img) => (img.X > columns[colIndexRange.Start] && img.X < columns[colIndexRange.End] ) && (img.Y > rows[rowIndexRange.Start] && img.Y < rows[rowIndexRange.End]) );
-            else if(rowIndexRange != null && colIndexRange == null)
+                return imgs.Where((img) => (img.X > columns[colIndexRange.Start] && img.X < columns[colIndexRange.End]) && (img.Y > rows[rowIndexRange.Start] && img.Y < rows[rowIndexRange.End]));
+            else if (rowIndexRange != null && colIndexRange == null)
                 return imgs.Where((img) => (img.Y > rows[rowIndexRange.Start] && img.Y < rows[rowIndexRange.End]));
             else if (colIndexRange != null && rowIndexRange == null)
-                return imgs.Where((img) => (img.X > columns[colIndexRange.Start] && img.X < columns[colIndexRange.End] ) );
+                return imgs.Where((img) => (img.X > columns[colIndexRange.Start] && img.X < columns[colIndexRange.End]));
             else
                 return imgs;
         }
@@ -594,20 +605,23 @@ namespace Helpy
         /// *A subImage is and image that is further to the left of the screen and it the same image as the given image path*</summary>
         /// <param name="path">Path of the image to look for</param>
         /// <param name="referenceToStart">Image to use as a reference to start to look for the sub Image </param>
-        public static IEnumerable<Rect> GetImageAndSubImage(string path, Rect referenceToStart = null){
+        public static IEnumerable<Rect> GetImageAndSubImage(string path, Rect referenceToStart = null)
+        {
 
             IEnumerable<Rect> images = FindAll(path);
             Rect minorImg = null;
-            if(images.Count() == 0)
+            if (images.Count() == 0)
                 return null;
 
             minorImg = referenceToStart == null ? images.First() : referenceToStart;
-            foreach(Rect img in images){
-                if(img.X > minorImg.X){
-                    return new Rect[2]{minorImg, img};
+            foreach (Rect img in images)
+            {
+                if (img.X > minorImg.X)
+                {
+                    return new Rect[2] { minorImg, img };
                 }
             }
-            return new Rect[2]{minorImg, null};
+            return new Rect[2] { minorImg, null };
         }
 
         /// <summary>Look for an Image and a subImage of the given image path 
@@ -662,7 +676,7 @@ namespace Helpy
             Rect rect = null;
             while (info.Status)
             {
-                rect = Find(path);
+                rect = Find(path, region: info.Region);
 
                 if (rect != null)
                 {
@@ -674,12 +688,12 @@ namespace Helpy
             }
         }
 
-        private static void ExcecuteActionFindFirst(ImageInfo info, KeyValuePair<string,Bitmap> image, Box box)
+        private static void ExcecuteActionFindFirst(ImageInfo info, KeyValuePair<string, Bitmap> image, Box box)
         {
             Rect rect = null;
             while (info.Status)
             {
-                rect = Find(image.Value);
+                rect = Find(image.Value, region: info.Region);
 
                 if (rect != null)
                 {
@@ -696,7 +710,7 @@ namespace Helpy
             Rect rect = null;
             while (info.Status)
             {
-                rect = Find(path);
+                rect = Find(path, region: info.Region);
 
                 if (rect != null)
                 {
@@ -707,17 +721,12 @@ namespace Helpy
             }
         }
 
-        private static Rect FixCoordinates(Rectangle firstRect, Rectangle secondRect)
-        {
-            return new Rect(firstRect.X + secondRect.X, firstRect.Y + secondRect.Y, secondRect.Width, secondRect.Height);
-        }
-
-        private static void ExcecuteActionFindAll(ImageInfo info, KeyValuePair<string,Bitmap> image)
+        private static void ExcecuteActionFindAll(ImageInfo info, KeyValuePair<string, Bitmap> image)
         {
             Rect rect = null;
             while (info.Status)
             {
-                rect = Find(image.Value);
+                rect = Find(image.Value, region: info.Region);
 
                 if (rect != null)
                 {
@@ -728,6 +737,10 @@ namespace Helpy
             }
         }
 
+        private static Rect FixCoordinates(Rectangle firstRect, Rectangle secondRect)
+        {
+            return new Rect(firstRect.X + secondRect.X, firstRect.Y + secondRect.Y, secondRect.Width, secondRect.Height);
+        }
         /// <summary>A helper to validate an image path</summary>
         private static void ValidateImage(string path)
         {
@@ -738,7 +751,8 @@ namespace Helpy
     }
 
     /// <summary>A class to get screen regions</summary>
-    public static class ScreenRegions {
+    public static class ScreenRegions
+    {
 
         /// <summary>Return the complete coordinate(X,Y, width, height) of the screen</summary>
         public static Rect Complete()
@@ -814,8 +828,9 @@ namespace Helpy
         {
             point = FixPoint(point);
             MouseHandler handler = new MouseHandler();
-            
-            for(int i = 0;i< numberOfClicks;i++){
+
+            for (int i = 0; i < numberOfClicks; i++)
+            {
                 handler.Click(point);
             }
         }
@@ -825,7 +840,8 @@ namespace Helpy
         public static void Click(int numberOfClicks = 1)
         {
             MouseHandler handler = new MouseHandler();
-            for (int i = 0; i < numberOfClicks; i++){
+            for (int i = 0; i < numberOfClicks; i++)
+            {
                 handler.Click();
             }
         }
@@ -861,7 +877,7 @@ namespace Helpy
         /// <param name="numberOfClicks">Amount of click to perform</param>
         /// <param name="region">Region of the screen to look for the image, for more details look for ScreenRegions class</param>
         /// <param name="attempts">Amount of tries to look for the image in the screen</param>
-        public static Rect ClickImage(string path,int numberOfClicks = 1, Rect region = null, int attempts = 1)
+        public static Rect ClickImage(string path, int numberOfClicks = 1, Rect region = null, int attempts = 1)
         {
             Rect image = Image.Find(path, region: region, attempts: attempts);
             MouseHandler handler = new MouseHandler();
@@ -869,7 +885,8 @@ namespace Helpy
             if (image == null)
                 return image;
 
-            for (int i = 0; i < numberOfClicks; i++){
+            for (int i = 0; i < numberOfClicks; i++)
+            {
                 handler.Click(Center(image));
             }
             return image;
@@ -881,7 +898,8 @@ namespace Helpy
         public static void ClickImage(Rect image, int numberOfClicks = 1)
         {
             MouseHandler handler = new MouseHandler();
-            for (int i = 0; i < numberOfClicks; i++){
+            for (int i = 0; i < numberOfClicks; i++)
+            {
                 handler.Click(Center(image));
             }
         }
@@ -911,7 +929,8 @@ namespace Helpy
         public static void RightClickImage(Rect image, int numberOfClicks = 1)
         {
             MouseHandler handler = new MouseHandler();
-            for (int i = 0; i < numberOfClicks; i++) {
+            for (int i = 0; i < numberOfClicks; i++)
+            {
                 handler.RightClick(Center(image));
             }
         }
@@ -935,12 +954,12 @@ namespace Helpy
             if (is_relative)
                 handler.Move(point);
             else
-                handler.MoveTo(new List<Point>(){currenPosition, point});
-            
+                handler.MoveTo(new List<Point>() { currenPosition, point });
+
             Point lastPosition = Position();
             if (currenPosition.X == lastPosition.X && currenPosition.Y == lastPosition.Y)
                 return false;
-            
+
             return true;
         }
 
@@ -954,9 +973,9 @@ namespace Helpy
             MouseHandler handler = new MouseHandler();
             Point currenPosition = Position();
             if (is_relative)
-                handler.Move(x,y);
+                handler.Move(x, y);
             else
-                handler.MoveTo(new List<Point>() { currenPosition, new Point(x,y) });
+                handler.MoveTo(new List<Point>() { currenPosition, new Point(x, y) });
 
             Point lastPosition = Position();
             if (currenPosition.X == lastPosition.X && currenPosition.Y == lastPosition.Y)
@@ -990,7 +1009,7 @@ namespace Helpy
         /// <param name="region">Region of the screen to look for the image, for more details look for ScreenRegions class</param>
         /// <param name="is_relative">If is_relative is set to True, it will move the cursor starting from its current positions and not 
         /// from the beginning of the screen </param>
-        public static bool Move(string path, Rect region,  bool is_relative = false)
+        public static bool Move(string path, Rect region, bool is_relative = false)
         {
             MouseHandler handler = new MouseHandler();
             Rect image = Image.Find(path, region: region);
@@ -1017,10 +1036,11 @@ namespace Helpy
         /// <param name="increment">Amount of pixel to move relative to the image position</param>
         /// <param name="direction">Direction to move the cursor starting from the center of the image</param>
         /// <param name="region">Region of the screen to look for the image, for more details look for ScreenRegions class</param>
-        public static Point MoveFromImage(string path, int increment, Direction direction ,Rect region = null)
+        public static Point MoveFromImage(string path, int increment, Direction direction, Rect region = null)
         {
-            switch (direction){
-                case Direction.BOTTOM: return MoveBottomFromImage(path,increment,region);
+            switch (direction)
+            {
+                case Direction.BOTTOM: return MoveBottomFromImage(path, increment, region);
                 case Direction.TOP: return MoveTopFromImage(path, increment, region);
                 case Direction.LEFT: return MoveLeftFromImage(path, increment, region);
                 case Direction.RIGHT: return MoveRightFromImage(path, increment, region);
@@ -1028,7 +1048,7 @@ namespace Helpy
                 case Direction.LEFTDOWN: return MoveLeftDownFromImage(path, increment, region);
                 case Direction.RIGHTUP: return MoveRightUpFromImage(path, increment, region);
                 case Direction.RIGHTDOWN: return MoveRightUpFromImage(path, increment, region);
-                default: return new Point(-1,-1);
+                default: return new Point(-1, -1);
             }
         }
 
@@ -1064,12 +1084,12 @@ namespace Helpy
             MouseHandler handler = new MouseHandler();
 
             if (image == null)
-                return new Point(-1,-1);
+                return new Point(-1, -1);
 
             Point point = Center(image);
             Move(point);
 
-            Point operations = new Point((image.Width / 2) + increment, 0 );
+            Point operations = new Point((image.Width / 2) + increment, 0);
             handler.Move(operations);
             return Position();
         }
@@ -1214,7 +1234,7 @@ namespace Helpy
             Point point = Center(image);
             Move(point);
 
-            Point operations = new Point(-1*((image.Width / 2) + increment), (-1 * (image.Height / 2) - increment));
+            Point operations = new Point(-1 * ((image.Width / 2) + increment), (-1 * (image.Height / 2) - increment));
             handler.Move(operations);
             return Position();
         }
@@ -1298,7 +1318,7 @@ namespace Helpy
             Point point = Center(image);
             Move(point);
 
-            Point operations = new Point(0, ( -1 * (image.Height / 2)) - increment);
+            Point operations = new Point(0, (-1 * (image.Height / 2)) - increment);
             handler.Move(operations);
             return Position();
         }
@@ -1365,10 +1385,12 @@ namespace Helpy
         ///<summary>Validates if point is a valid point in the screen</summary>
         private static Point FixPoint(Point point)
         {
-            if (point.X < 0){
+            if (point.X < 0)
+            {
                 point.X = 0;
             }
-            if (point.Y < 0){
+            if (point.Y < 0)
+            {
                 point.Y = 0;
             }
             return point;
@@ -1376,7 +1398,8 @@ namespace Helpy
 
         ///<summary>Gets the center of a rectangle</summary>
         ///<param name="rectangle">rectangle to get the center</param>
-        private static Point Center(Rect rectangle){
+        private static Point Center(Rect rectangle)
+        {
             Rectangle rect = Image.RectToRectangle(rectangle);
             return new Point(rect.Left + rect.Width / 2, rect.Top + rect.Height / 2);
         }
@@ -1402,7 +1425,8 @@ namespace Helpy
         public static void Press(KEYCODE key, int quantity = 1, double interval = 0)
         {
             InputSimulator sim = new InputSimulator();
-            for (int i = 0; i < quantity; i++){
+            for (int i = 0; i < quantity; i++)
+            {
                 sim.Keyboard.KeyDown((VirtualKeyCode)key);
                 Thread.Sleep(Convert.ToInt32(interval * 1000));
                 sim.Keyboard.KeyUp((VirtualKeyCode)key);
@@ -1446,10 +1470,12 @@ namespace Helpy
 
         /// <summary>Copy a given text to clickboard</summary>
         /// <param name="text">Text to copy</param>
-        public static bool Copy(string text){
+        public static bool Copy(string text)
+        {
 
             string result = string.Empty;
-            Thread newThread = new Thread(() => {
+            Thread newThread = new Thread(() =>
+            {
                 Clipboard.SetText(text);
                 result = Clipboard.GetText();
             });
@@ -1457,7 +1483,7 @@ namespace Helpy
             newThread.Start();
             newThread.Join();
 
-            return result == text; 
+            return result == text;
         }
 
         /// <summary>Get a text from the clipboard</summary>
@@ -1481,7 +1507,7 @@ namespace Helpy
             string result = string.Empty;
             if (!File.Exists(path))
                 throw new Exception(string.Format("The file {0} do not exist", path));
-            
+
             Thread newThread = new Thread(() => Clipboard.SetFileDropList(new StringCollection() { path }));
             newThread.SetApartmentState(ApartmentState.STA);
             newThread.Start();
@@ -1498,7 +1524,7 @@ namespace Helpy
             {
                 if (!File.Exists(path))
                     throw new Exception(string.Format("The file {0} do not exist", path));
-                
+
                 collection.Add(path);
             }
             Thread newThread = new Thread(() => Clipboard.SetFileDropList(collection));
@@ -1512,16 +1538,17 @@ namespace Helpy
         /// <param name="overrride">If is true, it will override the files that are the same in the given folder path</param>
         public static void PasteFiles(string folderPath, bool overrride = true)
         {
-            if(!Directory.Exists(folderPath))
+            if (!Directory.Exists(folderPath))
                 throw new Exception("The folder path is not a valid directory");
 
             StringCollection result = null;
-            Thread newThread = new Thread(() => result = Clipboard.GetFileDropList() );
+            Thread newThread = new Thread(() => result = Clipboard.GetFileDropList());
             newThread.SetApartmentState(ApartmentState.STA);
             newThread.Start();
             newThread.Join();
 
-            foreach (string clipBoardPath in result){
+            foreach (string clipBoardPath in result)
+            {
                 string fullPath = Path.Combine(folderPath, Path.GetFileName(clipBoardPath));
                 File.Copy(clipBoardPath, fullPath, overrride);
             }
@@ -1538,7 +1565,8 @@ namespace Helpy
             newThread.Start();
             newThread.Join();
 
-            foreach (string clipBoardPath in result){
+            foreach (string clipBoardPath in result)
+            {
                 values.Add(clipBoardPath);
             }
             return values;
@@ -1547,14 +1575,16 @@ namespace Helpy
     }
 
     ///<summary>A class to manipulate image bounds, and alternative to rect struct</summary>
-    public class Rect{
-       
-        public int X { get; set;}
-        public int Y { get; set;}
-        public int Width { get; set;}
-        public int Height {get; set;}
+    public class Rect
+    {
 
-        public Rect(int x, int y, int width, int height){
+        public int X { get; set; }
+        public int Y { get; set; }
+        public int Width { get; set; }
+        public int Height { get; set; }
+
+        public Rect(int x, int y, int width, int height)
+        {
             this.X = x;
             this.Y = y;
             this.Width = width;
@@ -1569,9 +1599,10 @@ namespace Helpy
     }
 
     ///<summary>A range object to specified some constraints in images</summary>
-    public class Range{
-        public int Start {get;set;}
-        public int End {get;set;}
+    public class Range
+    {
+        public int Start { get; set; }
+        public int End { get; set; }
 
         public Range(int start, int end)
         {
@@ -1581,7 +1612,8 @@ namespace Helpy
     }
 
     ///<summary>A class that provide some Shortcuts to use with Keyboard Command methods</summary>
-    public static class Shortcuts{
+    public static class Shortcuts
+    {
         ///<summary>Shortcut to perform the window copy Shortcut CTRL + C</summary>
         public static KeyValuePair<IEnumerable<KEYCODE>, IEnumerable<KEYCODE>> COPY = new KeyValuePair<IEnumerable<KEYCODE>, IEnumerable<KEYCODE>>(new List<KEYCODE>() { KEYCODE.CONTROL }, new List<KEYCODE>() { KEYCODE.C });
         ///<summary>Shortcut to perform the window paste Shortcut CTRL + V</summary>
@@ -1680,14 +1712,15 @@ namespace Helpy
             string filename = Path.GetFileName(fullPath);
 
             if (!Directory.Exists(folderPath))
-                throw new Exception(string.Format("The Directory {0} is not valid",folderPath));
+                throw new Exception(string.Format("The Directory {0} is not valid", folderPath));
             if (!ValidExtensions.Contains(Path.GetExtension(filename).ToLower()))
                 throw new Exception(string.Format("The file extension is not valid, consider use png or jpg"));
 
             Rectangle rect = Image.RectToRectangle(ScreenRegions.Complete());
             Bitmap bmp = new Bitmap(rect.Size.Width, rect.Size.Height);
             //string fullPath = Path.Combine(folderPath,filename);
-            using (Graphics g = Graphics.FromImage(bmp)){
+            using (Graphics g = Graphics.FromImage(bmp))
+            {
                 g.CopyFromScreen(0, 0, 0, 0, rect.Size);
                 bmp.Save(fullPath);
             }
@@ -1702,7 +1735,7 @@ namespace Helpy
             Bitmap bmp = new Bitmap(region.Width, region.Height);
             using (Graphics g = Graphics.FromImage(bmp))
             {
-                g.CopyFromScreen(region.X,region.Y, 0, 0, new Size(region.Width, region.Height));
+                g.CopyFromScreen(region.X, region.Y, 0, 0, new Size(region.Width, region.Height));
                 bmp.Save(fullPath);
             }
             return File.Exists(fullPath);
@@ -1724,7 +1757,8 @@ namespace Helpy
     }
 
     ///<summary>A class that provide some methods to manipulate windows including explorer windows</summary>
-    public class Window{
+    public class Window
+    {
 
         ///<summary>Windows handle to identify the current windows</summary>
         public IntPtr Handle { get; private set; }
@@ -1762,12 +1796,12 @@ namespace Helpy
             Children = new List<Window>();
             ArrayList handles = new ArrayList();
             EnumedWindow childProc = GetWindowHandle;
-            
+
             EnumChildWindows(handle, childProc, handles);
             foreach (IntPtr item in handles)
             {
                 int capacityChild = GetWindowTextLength(handle) * 2;
-                
+
                 StringBuilder stringBuilderChild = new StringBuilder(capacityChild);
                 GetWindowText(handle, stringBuilder, stringBuilderChild.Capacity);
 
@@ -1807,7 +1841,7 @@ namespace Helpy
         {
             if (!File.Exists(filePath))
                 throw new Exception(string.Format("The filePath {0} is not valid", filePath));
-            
+
             Process newProcess = Process.Start(filePath);
 
             if (timeToWait == -1)
@@ -1815,7 +1849,7 @@ namespace Helpy
             else
                 newProcess.WaitForInputIdle(timeToWait * 1000);
 
-            if(newProcess != null && newProcess.MainWindowHandle != IntPtr.Zero)
+            if (newProcess != null && newProcess.MainWindowHandle != IntPtr.Zero)
                 return new Window(newProcess.MainWindowHandle, newProcess.MainWindowTitle);
 
             return null;
@@ -1895,9 +1929,9 @@ namespace Helpy
                     if (exactMatch)
                         if (winTitle == name)
                             return new Window(handle, winTitle);
-                    else
-                        if (winTitle.ToLower().Contains(name.ToLower()))
-                            return new Window(handle, winTitle);
+                        else
+                            if (winTitle.ToLower().Contains(name.ToLower()))
+                                return new Window(handle, winTitle);
                 }
                 Helpers.Wait(waitInterval);
                 counter++;
@@ -1930,7 +1964,7 @@ namespace Helpy
         /// <param name="name">Name of the process</param>
         /// <param name="attempts">Amount of tries that it will look for at least one window</param>
         /// <param name="waitInterval">Amount ot time it will stop the thread while waiting for the windows in each attemp</param>
-        public static IEnumerable<Window> GetWindowsWithParcialName(string name, int attempts = 1,int waitInterval = 1000)
+        public static IEnumerable<Window> GetWindowsWithParcialName(string name, int attempts = 1, int waitInterval = 1000)
         {
             IEnumerable<Process> currentProcesses = Process.GetProcesses();
             ICollection<Window> windows = new List<Window>();
@@ -2043,11 +2077,12 @@ namespace Helpy
 
             rect.Width = rect.Right - rect.Left + Amount;
             rect.Height = rect.Bottom - rect.Top + Amount;
-            return MoveWindow(this.Handle, X, Y,rect.Width,rect.Height, true);
+            return MoveWindow(this.Handle, X, Y, rect.Width, rect.Height, true);
         }
 
         /// <summary>Return the position of the windows as X, Y coordinates</summary>
-        public Point Position(){
+        public Point Position()
+        {
             RectStruct rect = new RectStruct();
             GetWindowRect(this.Handle, ref rect);
 
@@ -2057,7 +2092,8 @@ namespace Helpy
         }
 
         /// <summary>Return the Size of the windows as width, height coordinates</summary>
-        public Size Size(){
+        public Size Size()
+        {
             RectStruct rect = new RectStruct();
             GetWindowRect(this.Handle, ref rect);
 
@@ -2067,7 +2103,8 @@ namespace Helpy
         }
 
         /// <summary>Return the position and size of the windows as X, Y, with, height coordinates</summary>
-        public Rect Area(){
+        public Rect Area()
+        {
             RectStruct rect = new RectStruct();
             GetWindowRect(this.Handle, ref rect);
 
@@ -2085,7 +2122,7 @@ namespace Helpy
         /// <summary>Make and screenshot of the current windows</summary>
         public bool TakeScreenShot(string fullPath)
         {
-            return ScreenShot.Capture(Area(),fullPath);
+            return ScreenShot.Capture(Area(), fullPath);
         }
 
         [DllImport("user32.dll", SetLastError = true, CharSet = CharSet.Auto)]
@@ -2246,10 +2283,11 @@ namespace Helpy
     }
 
     ///<summary>A class that provide some methods to manipulate excel files</summary>
-    public class Excel{
+    public class Excel
+    {
 
         private XLWorkbook Workbook;
-        public int LimitPerSheet { get;set; }
+        public int LimitPerSheet { get; set; }
         ///<summary>Set the default limit for rows in an excel sheet</summary>
         public static int DefaultLimit = 50000;
         ///<summary>Get or set the default name for an excel sheet</summary>
@@ -2290,7 +2328,7 @@ namespace Helpy
         ///<summary>Loads and Excel file</summary>
         /// <param name="path">Path of the file</param>
         /// <param name="maxRowPerSheet">Amount of rows allowed per file default 50,000, max 1,048,576</param>
-        public static Excel Load(string path,int maxRowPerSheet = 200000)
+        public static Excel Load(string path, int maxRowPerSheet = 200000)
         {
             Excel newEx = new Excel();
             newEx.Workbook = new XLWorkbook(path, XLEventTracking.Disabled);
@@ -2360,8 +2398,8 @@ namespace Helpy
             {
                 IList<string> headers = (customHeaders == null ? firstRow.Cells().Select(c => c.Value.ToString()) : customHeaders).ToList();
                 IEnumerable<IXLRow> rows = countEmptyRows ? workSheet.Rows() : workSheet.RowsUsed();
-                
-                foreach (IXLRow row in rows.Skip(customHeaders == null ? 1: 0))
+
+                foreach (IXLRow row in rows.Skip(customHeaders == null ? 1 : 0))
                 {
                     IDictionary<string, string> dict = new Dictionary<string, string>();
                     for (int i = 0; i < headers.Count; i++)
@@ -2388,8 +2426,8 @@ namespace Helpy
             {
                 IList<string> headers = (customHeaders == null ? firstRow.Cells().Select(c => c.GetString()) : customHeaders).ToList();
                 IEnumerable<IXLRow> rows = countEmptyRows ? workSheet.Rows() : workSheet.RowsUsed();
-                
-                foreach (IXLRow row in rows.Skip(customHeaders == null ? 1:0))
+
+                foreach (IXLRow row in rows.Skip(customHeaders == null ? 1 : 0))
                 {
                     IDictionary<string, string> dict = new Dictionary<string, string>();
                     for (int i = 0; i < headers.Count; i++)
@@ -2498,11 +2536,12 @@ namespace Helpy
         {
             ICollection<string> values = new List<string>();
             IXLWorksheet workSheet = string.IsNullOrWhiteSpace(sheetName) ? Workbook.Worksheet(1) : Workbook.Worksheet(sheetName);
-            IXLRow  headers = workSheet.FirstRow();
+            IXLRow headers = workSheet.FirstRow();
             bool validCol = false;
 
             int index = 1;
-            foreach(IXLCell cell in headers.Cells()){
+            foreach (IXLCell cell in headers.Cells())
+            {
                 if (cell.Value.ToString().ToLower() == column.ToLower())
                 {
                     validCol = true;
@@ -2512,9 +2551,9 @@ namespace Helpy
             }
 
             if (!validCol)
-                throw new Exception(string.Format("The column {0} is not valid",column));
+                throw new Exception(string.Format("The column {0} is not valid", column));
 
-            foreach(IXLCell cell in workSheet.Column(index).Cells())
+            foreach (IXLCell cell in workSheet.Column(index).Cells())
                 values.Add(cell.GetString());
 
             return values;
@@ -2543,9 +2582,9 @@ namespace Helpy
         /// <param name="rows">Data to add to the new excel file as list of list where each list repressent a row</param>
         /// <param name="headers">Titles of the excel file, if null it will start adding rows from the first file</param>
         /// <param name="sheetName">Name of the sheet to get the data, if null it will use the first sheet</param>
-        public static void Create(string path,IEnumerable<IEnumerable<string>> rows, IEnumerable<string> headers = null, string sheetName = null)
+        public static void Create(string path, IEnumerable<IEnumerable<string>> rows, IEnumerable<string> headers = null, string sheetName = null)
         {
-            
+
             string folder = Path.GetDirectoryName(path);
             ValidateFolder(folder);
 
@@ -2629,7 +2668,7 @@ namespace Helpy
             XLWorkbook NewWorkBook = new XLWorkbook(XLEventTracking.Disabled);
             IXLWorksheet workSheet = sheetName == null ? NewWorkBook.Worksheets.Add(DefaultSheetName) : NewWorkBook.Worksheets.Add(sheetName);
             string currentSheetName = workSheet.Name;
-            
+
             if (rows.Count() > 0)
                 rowIndex = AddHeaders(workSheet, rows.First().Keys);
 
@@ -2670,7 +2709,7 @@ namespace Helpy
                 rowIndex = 2;
             }
 
-            rowSheet = workSheet.Row(rowIndex);    
+            rowSheet = workSheet.Row(rowIndex);
             foreach (string value in row)
             {
                 rowSheet.Cell(cellIndex).Value = value;
@@ -2708,7 +2747,7 @@ namespace Helpy
                 {
                     workSheet = PrepareNewSheet(Workbook, workSheet, currentSheetName);
                     rowIndex = 2;
-                } 
+                }
             }
         }
 
@@ -2751,7 +2790,7 @@ namespace Helpy
             string currentSheetName = workSheet.Name;
             if (rowIndex > LimitPerSheet + 1)
             {
-                workSheet = PrepareNewSheet(Workbook, workSheet,currentSheetName);
+                workSheet = PrepareNewSheet(Workbook, workSheet, currentSheetName);
                 rowIndex = 2;
             }
 
@@ -2763,7 +2802,7 @@ namespace Helpy
                     if (IsValidPropertyType(prop.PropertyType))
                     {
                         workSheet.Row(rowIndex).Cell(cellIndex).Value = prop.GetValue(row, null);
-                        cellIndex ++;
+                        cellIndex++;
                     }
                 }
                 rowIndex++;
@@ -2815,7 +2854,7 @@ namespace Helpy
                 rowIndex = 2;
             }
 
-            foreach(IDictionary<string,string> row in rows)
+            foreach (IDictionary<string, string> row in rows)
             {
                 int cellIndex = 1;
                 foreach (string value in row.Values)
@@ -2926,7 +2965,7 @@ namespace Helpy
             IXLWorksheet workSheet = string.IsNullOrWhiteSpace(sheetName) ? Workbook.Worksheet(1) : Workbook.Worksheet(sheetName);
             IEnumerable<IXLRow> rows = workSheet.Rows().Skip(1);
 
-            foreach(IXLRow row in rows)
+            foreach (IXLRow row in rows)
                 row.Delete();
         }
 
@@ -2991,7 +3030,7 @@ namespace Helpy
             {
                 int cellIndex = 1;
                 IXLRow rowSheet = workSheet.Row(rowIndex);
-                
+
                 foreach (PropertyInfo prop in row.GetType().GetProperties())
                 {
                     if (IsValidPropertyType(prop.PropertyType))
@@ -3019,12 +3058,12 @@ namespace Helpy
         {
             ValidateFile(path);
 
-            XLWorkbook CurrentWorkBook = new XLWorkbook(path,XLEventTracking.Disabled);
+            XLWorkbook CurrentWorkBook = new XLWorkbook(path, XLEventTracking.Disabled);
             IXLWorksheet workSheet = sheetName == null ? CurrentWorkBook.Worksheet(1) : CurrentWorkBook.Worksheet(sheetName);
             int rowIndex = workSheet.LastRowUsed().RowNumber() + 1;
             string currentSheetName = workSheet.Name;
 
-            foreach (IDictionary<string,string> row in rows)
+            foreach (IDictionary<string, string> row in rows)
             {
                 int cellIndex = 1;
                 IXLRow rowSheet = workSheet.Row(rowIndex);
@@ -3060,7 +3099,7 @@ namespace Helpy
 
             string[] filename = string.IsNullOrEmpty(template_name) ? DefaultFileName.Split('.') : template_name.Split('.');
             string name = filename[0];
-            string extention = filename.Length > 1 ? "."+filename[1] : ".xlsx";
+            string extention = filename.Length > 1 ? "." + filename[1] : ".xlsx";
 
             XLWorkbook CurrentWorkBook = new XLWorkbook(path);
             IXLWorksheet workSheet = sheetName == null ? CurrentWorkBook.Worksheet(1) : CurrentWorkBook.Worksheet(sheetName);
@@ -3079,7 +3118,8 @@ namespace Helpy
             AssingValuesToRow(newWorksheet.Row(1), headers);
             string fullName = Path.Combine(newFilesfolderPath, name + filesIndexName.ToString() + extention);
 
-            foreach(IXLRow row in rows.Skip(customHeaders == null ? 1 : 0)){
+            foreach (IXLRow row in rows.Skip(customHeaders == null ? 1 : 0))
+            {
 
                 AssingValuesToRow(newWorksheet.Row(rowIndex + 2), row.Cells());
                 rowIndex += 1;
@@ -3272,7 +3312,8 @@ namespace Helpy
             int rowIndex = 1;
             bool hasHeader = false;
 
-            foreach(string filePath in Directory.GetFiles(filesFolderPath)){
+            foreach (string filePath in Directory.GetFiles(filesFolderPath))
+            {
                 if (!IsValidExtension(filePath))
                     continue;
 
@@ -3286,7 +3327,7 @@ namespace Helpy
                     hasHeader = true;
                 }
 
-                foreach (IXLRow row in rows.Skip(hasHeader ? 1:0))
+                foreach (IXLRow row in rows.Skip(hasHeader ? 1 : 0))
                 {
                     int cellIndex = 1;
                     if (rowIndex > DefaultLimit)
@@ -3295,7 +3336,8 @@ namespace Helpy
                         rowIndex = AddHeaders(workSheet, customHeaders);
                     }
 
-                    foreach(IXLCell cell in row.Cells()){
+                    foreach (IXLCell cell in row.Cells())
+                    {
                         workSheet.Row(rowIndex).Cell(cellIndex).Value = cell.GetString();
                         cellIndex += 1;
                     }
@@ -3379,7 +3421,7 @@ namespace Helpy
                 EvaluateFormulasBeforeSaving = false,
                 ValidatePackage = false,
             };
-            Workbook.SaveAs(path,so);
+            Workbook.SaveAs(path, so);
         }
 
 
@@ -3388,14 +3430,14 @@ namespace Helpy
             return SupportedExtensions.Contains(Path.GetExtension(extension));
         }
 
-        private static T DictToObject<T>(IDictionary<string,string> dict) where T: new()
+        private static T DictToObject<T>(IDictionary<string, string> dict) where T : new()
         {
             Type type = typeof(T);
             T newObj = new T();
 
             foreach (KeyValuePair<string, string> keyValue in dict)
             {
-                if (HasProperty(newObj,keyValue.Key))
+                if (HasProperty(newObj, keyValue.Key))
                 {
                     PropertyInfo property = type.GetProperty(keyValue.Key);
                     if (IsValidPropertyType(property.PropertyType))
@@ -3422,13 +3464,16 @@ namespace Helpy
             return dict;
         }
 
-        private static bool HasProperty(object obj,string name)
+        private static bool HasProperty(object obj, string name)
         {
-            try{
+            try
+            {
                 return obj.GetType().GetProperty(name) != null;
-            }catch{
+            }
+            catch
+            {
                 return false;
-            } 
+            }
         }
 
         private static bool IsValidPropertyType(Type propType)
@@ -3439,7 +3484,7 @@ namespace Helpy
             return ValidConvertedValueTypes.Contains(propType);
         }
 
-        private static void AssingValuesToRow(IXLRow row,IList<string> values)
+        private static void AssingValuesToRow(IXLRow row, IList<string> values)
         {
             for (int i = 0; i < values.Count; i++)
             {
@@ -3450,7 +3495,8 @@ namespace Helpy
         private static void AssingValuesToRow(IXLRow row, IXLCells values)
         {
             int cellIndex = 1;
-            foreach(IXLCell cell in values){
+            foreach (IXLCell cell in values)
+            {
                 row.Cell(cellIndex + 1).Value = cell.GetString();
                 cellIndex++;
             }
@@ -3459,7 +3505,7 @@ namespace Helpy
         private static IXLWorksheet AddNewSheet(XLWorkbook workbook, string sheetName = null)
         {
             IXLWorksheet newWorksheet = null;
-            string newSheetName = sheetName == null ? Guid.NewGuid().ToString().Substring(0,31) : sheetName + (workbook.Worksheets.Count + 1).ToString();
+            string newSheetName = sheetName == null ? Guid.NewGuid().ToString().Substring(0, 31) : sheetName + (workbook.Worksheets.Count + 1).ToString();
             if (newSheetName.Length > 31)
                 newSheetName = newSheetName.Substring(0, 31);
             newWorksheet = workbook.Worksheets.Add(newSheetName);
