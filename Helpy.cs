@@ -742,7 +742,7 @@ namespace Helpy
         /// </summary>
         /// <param name="rectToHightLight">The region to hightLight</param>
         /// <param name="hightLightColor">The color to use to fill the region</param>
-        private static void HigtLight(Rect rectToHightLight, Color hightLightColor)
+        private static void HigLight(Rect rectToHightLight, Color hightLightColor)
         {
             Rectangle currentRegion = rectToHightLight == null ? RectToRectangle(ScreenRegions.Complete()) : RectToRectangle(rectToHightLight);
             Area area = new Area(currentRegion);
@@ -755,7 +755,7 @@ namespace Helpy
         /// <param name="rectToHightLight">The region to hightLight</param>
         /// <param name="hightLightColor">The color to use to fill the region</param>
         /// <param name="opacity">The opacity of the color</param>
-        public static void HightLight(Rect rectToHightLight, Color hightLightColor, int opacity)
+        public static void HighLight(Rect rectToHightLight, Color hightLightColor, int opacity)
         {
             Rectangle currentRegion = rectToHightLight == null ? RectToRectangle(ScreenRegions.Complete()) : RectToRectangle(rectToHightLight);
             Area area = new Area(currentRegion);
@@ -767,7 +767,7 @@ namespace Helpy
         /// </summary>
         /// <param name="rectToHightLight">The region to hightLight</param>
         /// <param name="brush">The brush to use to hightLight the given region</param>
-        public static void HightLight(Rect rectToHightLight, Brush brush)
+        public static void HighLight(Rect rectToHightLight, Brush brush)
         {
             Rectangle currentRegion = rectToHightLight == null ? RectToRectangle(ScreenRegions.Complete()) : RectToRectangle(rectToHightLight);
             Area area = new Area(currentRegion);
@@ -779,7 +779,7 @@ namespace Helpy
         /// </summary>
         /// <param name="rectToHightLight">The region to hightLight</param>
         /// <param name="pen">The pen to use to hightLight the given region</param>
-        public static void HightLight(Rect rectToHightLight, Pen pen)
+        public static void HighLight(Rect rectToHightLight, Pen pen)
         {
             Rectangle currentRegion = rectToHightLight == null ? RectToRectangle(ScreenRegions.Complete()) : RectToRectangle(rectToHightLight);
             Area area = new Area(currentRegion);
@@ -789,7 +789,7 @@ namespace Helpy
         /// <summary>
         /// Remove all hightLight from current screen
         /// </summary>
-        public static void RemoveHightLight()
+        public static void RemoveHighLight()
         {
             Area.ClearHighlight();
         }
