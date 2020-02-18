@@ -2373,7 +2373,6 @@ namespace Helpy
     ///<summary>A class that provide some methods to manipulate excel files</summary>
     public class Excel
     {
-
         private XLWorkbook Workbook;
         public int LimitPerSheet { get; set; }
         ///<summary>Set the default limit for rows in an excel sheet</summary>
@@ -2470,6 +2469,16 @@ namespace Helpy
                     rowIndex += 1;
                 }
             }
+        }
+
+        /// <summary>
+        /// Return the current headers of the file
+        /// </summary>
+        /// <param name="sheetName">Name of the sheet to look for headers</param>
+        public IEnumerable<string> GetHeaders(string sheetName = null)
+        {
+            IXLWorksheet workSheet = !string.IsNullOrWhiteSpace(sheetName) ? Workbook.Worksheet(sheetName) : Workbook.Worksheet(1);
+            return workSheet.FirstRow().CellsUsed().Select(c => c.GetString());
         }
 
         ///<summary>Get all data of the current excel file sheet as a list of dictionaries</summary>
