@@ -2439,6 +2439,22 @@ namespace Helpy
                 return false;
         }
 
+        ///<summary>Adds a new sheet to the file</summary>
+        /// <param name="sheetName">Name of the sheet to add</param>
+        /// <param name="table">Data to add to the new sheet</param>
+        public bool AddSheet(string sheetName, System.Data.DataTable table)
+        {
+            if (!SheetNames.Contains(sheetName))
+            {
+                table.TableName = sheetName;
+                Workbook.Worksheets.Add(table);
+                SheetNames.Add(sheetName);
+                return true;
+            }
+            else
+                return false;
+        }
+
         ///<summary>Removes a sheet of the file</summary>
         /// <param name="sheetName">Name of the sheet to remove, if not exist return false</param>
         public bool RemoveSheet(string sheetName)
@@ -2509,6 +2525,36 @@ namespace Helpy
             return dictList;
         }
 
+        /// <summary>Get all data of the current excel file  as a datatable</summary>
+        /// <param name="sheetName">Name of the sheet to get the data, if null it will use the first sheet</param>
+        /// <param name="customHeaders">Headers to use as keys to the dictionary that represends a row</param>
+        /// <param name="countEmptyRows">If is true, it will brings empty rows that where use in the file</param>
+        public System.Data.DataTable ExtractToDatatable(string sheetName = null, IEnumerable<string> customHeaders = null, bool countEmptyRows = false)
+        {
+            System.Data.DataTable table = new System.Data.DataTable();
+            IXLWorksheet workSheet = string.IsNullOrWhiteSpace(sheetName) ? Workbook.Worksheet(1) : Workbook.Worksheet(sheetName);
+            IXLRow firstRow = workSheet.FirstRow();
+
+            if (firstRow != null)
+            {
+                IList<string> headers = (customHeaders == null ? firstRow.Cells().Select(c => c.Value.ToString()) : customHeaders).ToList();
+                IEnumerable<IXLRow> rows = countEmptyRows ? workSheet.Rows() : workSheet.RowsUsed();
+
+                foreach (string header in headers)
+                {
+                    table.Columns.Add(header, typeof(string));
+                }
+
+                foreach (IXLRow row in rows.Skip(customHeaders == null ? 1 : 0))
+                {
+                    System.Data.DataRow dataRow = table.NewRow();
+                    dataRow.ItemArray = row.CellsUsed().Select(c => c.Value).ToArray();
+                    table.Rows.Add(dataRow);
+                }
+            }
+            return table;
+        }
+
         ///<summary>Get all data of the current excel file sheet and cast it to an specified object if possible</summary>
         /// <param name="sheetName">Name of the sheet to get the data, if null it will use the first sheet</param>
         /// <param name="customHeaders">Headers to use to reflect the objets variable names of your class</param>
@@ -2563,7 +2609,20 @@ namespace Helpy
             return listOfList;
         }
 
-        ///<summary>Get all data of the current excel file sheet as a list ob dictionaries starting and ending from the specified params</summary>
+        ///<summary>Get all data of the current excel file for all sheets as list of datatable where each datatable represents a sheet</summary>
+        /// <param name="customHeaders">Headers to use as keys to the dictionary that represends a row</param>
+        /// <param name="countEmptyRows">If is true, it will brings empty rows that where use in the file</param>
+        public IEnumerable<System.Data.DataTable> ExtractAllToDatatable(IEnumerable<string> customHeaders = null, bool countEmptyRows = false)
+        {
+            ICollection<System.Data.DataTable> listOfDatatable = new List<System.Data.DataTable>();
+            foreach (string name in SheetNames)
+            {
+                listOfDatatable.Add(ExtractToDatatable(name, customHeaders, countEmptyRows));
+            }
+            return listOfDatatable;
+        }
+
+        ///<summary>Get all data of the current excel file sheet as a list of dictionaries starting and ending from the specified params</summary>
         ///<param name="startRow">Row to start to take the data</param>
         /// <param name="endRow">Row to stop to take the data</param>
         /// <param name="sheetName">Name of the sheet to get the data, if null it will use the first sheet</param>
@@ -2594,6 +2653,38 @@ namespace Helpy
                 }
             }
             return dictList;
+        }
+
+        ///<summary>Get all data of the current excel file sheet as a datatable starting and ending from the specified params</summary>
+        ///<param name="startRow">Row to start to take the data</param>
+        /// <param name="endRow">Row to stop to take the data</param>
+        /// <param name="sheetName">Name of the sheet to get the data, if null it will use the first sheet</param>
+        /// <param name="customHeaders">Headers to use as keys to the dictionary that represends a row</param>
+        /// <param name="countEmptyRows">If is true, it will brings empty rows that where use in the file</param>
+        public System.Data.DataTable PaginateToDatatable(int startRow, int endRow, string sheetName = null, IEnumerable<string> customHeaders = null, bool countEmptyRows = false)
+        {
+            System.Data.DataTable table = new System.Data.DataTable();
+            IXLWorksheet workSheet = string.IsNullOrWhiteSpace(sheetName) ? Workbook.Worksheet(1) : Workbook.Worksheet(sheetName);
+            IXLRow firstRow = workSheet.FirstRow();
+
+            if (firstRow != null)
+            {
+                IList<string> headers = (customHeaders == null ? firstRow.Cells().Select(c => c.Value.ToString()) : customHeaders).ToList();
+                IEnumerable<IXLRow> rows = countEmptyRows ? workSheet.Rows(startRow, endRow) : workSheet.RowsUsed().Skip(startRow).Take(endRow);
+
+                foreach (string header in headers)
+                {
+                    table.Columns.Add(header, typeof(string));
+                }
+
+                foreach (IXLRow row in rows.Skip(customHeaders == null ? 1 : 0))
+                {
+                    System.Data.DataRow dataRow = table.NewRow();
+                    dataRow.ItemArray = row.CellsUsed().Select(c => c.Value).ToArray();
+                    table.Rows.Add(dataRow);
+                }
+            }
+            return table;
         }
 
         ///<summary>Get all data of the current excel file for sheet as a list of objets starting and ending from the specified params</summary>
@@ -2788,6 +2879,42 @@ namespace Helpy
             NewWorkBook.SaveAs(path);
         }
 
+        ///<summary>Creates a new excel file</summary>
+        /// <param name="path">Filepath of the new excel file</param>
+        /// <param name="table">Data to add to the new excel file as a datatable</param>
+        /// <param name="headers">Titles of the excel file, if null it will start adding rows from the first file</param>
+        /// <param name="sheetName">Name of the sheet to get the data, if null it will use the first sheet</param>
+        public static void Create(string path, System.Data.DataTable table, string sheetName = null)
+        {
+            string folder = Path.GetDirectoryName(path);
+            ValidateFolder(folder);
+
+            int rowIndex = 1;
+            XLWorkbook NewWorkBook = new XLWorkbook(XLEventTracking.Disabled);
+            IXLWorksheet workSheet = sheetName == null ? NewWorkBook.Worksheets.Add(DefaultSheetName) : NewWorkBook.Worksheets.Add(sheetName);
+            string currentSheetName = workSheet.Name;
+
+            rowIndex = AddHeaders(workSheet, table.Columns);
+
+            foreach (System.Data.DataRow row in table.Rows)
+            {
+                int cellIndex = 1;
+                foreach (object value in row.ItemArray)
+                {
+                    workSheet.Row(rowIndex).Cell(cellIndex).Value = value;
+                    cellIndex++;
+                }
+
+                rowIndex++;
+                if (rowIndex > DefaultLimit + 1)
+                {
+                    workSheet = PrepareNewSheet(NewWorkBook, workSheet, currentSheetName);
+                    rowIndex = 2;
+                }
+            }
+            NewWorkBook.SaveAs(path);
+        }
+
         ///<summary>Add data to an excel file</summary>
         /// <param name="row">Data to add to the new excel file as list</param>
         /// <param name="sheetName">Name of the sheet to get the data, if null it will use the first sheet</param>
@@ -2960,6 +3087,40 @@ namespace Helpy
             {
                 int cellIndex = 1;
                 foreach (string value in row.Values)
+                {
+                    workSheet.Row(rowIndex).Cell(cellIndex).Value = value;
+                    cellIndex++;
+                }
+
+                rowIndex++;
+                if (rowIndex > LimitPerSheet + 1)
+                {
+                    workSheet = PrepareNewSheet(Workbook, workSheet, currentSheetName);
+                    rowIndex = 2;
+                }
+            }
+        }
+
+        ///<summary>Add data to an excel file</summary>
+        /// <param name="table">Data to add to the new excel file as a datatable</param>
+        /// <param name="sheetName">Name of the sheet to get the data, if null it will use the first sheet</param>
+        public void Append(System.Data.DataTable table, string sheetName = null)
+        {
+            IXLWorksheet workSheet = sheetName == null ? Workbook.Worksheets.First() : Workbook.Worksheets.Worksheet(sheetName);
+            IXLRow lastRow = workSheet.LastRowUsed();
+            int rowIndex = lastRow == null ? 1 : lastRow.RowNumber() + 1;
+            string currentSheetName = workSheet.Name;
+
+            if (rowIndex > LimitPerSheet + 1)
+            {
+                workSheet = PrepareNewSheet(Workbook, workSheet, currentSheetName);
+                rowIndex = 2;
+            }
+
+            foreach (System.Data.DataRow row in table.Rows)
+            {
+                int cellIndex = 1;
+                foreach (object value in row.ItemArray)
                 {
                     workSheet.Row(rowIndex).Cell(cellIndex).Value = value;
                     cellIndex++;
@@ -3174,6 +3335,41 @@ namespace Helpy
                 IXLRow rowSheet = workSheet.Row(rowIndex);
 
                 foreach (string value in row.Values)
+                {
+                    rowSheet.Cell(cellIndex).Value = value;
+                    cellIndex += 1;
+                }
+                rowIndex += 1;
+
+                if (rowIndex > DefaultLimit + 1)
+                {
+                    workSheet = PrepareNewSheet(CurrentWorkBook, workSheet, currentSheetName);
+                    rowIndex = 2;
+                }
+            }
+            CurrentWorkBook.Save();
+        }
+
+        /// <summary>Writes data to an excel file</summary>
+        /// <param name="path">Filepath of the new excel file</param>
+        /// <param name="table">Data to add to the new excel file as a datatable</param>
+        /// <param name="sheetName">Name of the sheet to get the data, if null it will use the first sheet</param>
+        public static void Write(string path, System.Data.DataTable table, string sheetName = null)
+        {
+            ValidateFile(path);
+
+            XLWorkbook CurrentWorkBook = new XLWorkbook(path, XLEventTracking.Disabled);
+            IXLWorksheet workSheet = sheetName == null ? CurrentWorkBook.Worksheet(1) : CurrentWorkBook.Worksheet(sheetName);
+            IXLRow lastRow = workSheet.LastRowUsed();
+            int rowIndex = lastRow == null ? 1 : lastRow.RowNumber() + 1;
+            string currentSheetName = workSheet.Name;
+
+            foreach (System.Data.DataRow row in table.Rows)
+            {
+                int cellIndex = 1;
+                IXLRow rowSheet = workSheet.Row(rowIndex);
+
+                foreach (object value in row.ItemArray)
                 {
                     rowSheet.Cell(cellIndex).Value = value;
                     cellIndex += 1;
@@ -3626,6 +3822,23 @@ namespace Helpy
                 foreach (string value in headers)
                 {
                     row.Cell(cellIndex).Value = value;
+                    cellIndex++;
+                }
+                rowIndex++;
+            }
+            return rowIndex;
+        }
+
+        private static int AddHeaders(IXLWorksheet workSheet, System.Data.DataColumnCollection headers)
+        {
+            int rowIndex = 1;
+            if (headers != null)
+            {
+                int cellIndex = 1;
+                IXLRow row = workSheet.FirstRow();
+                foreach (System.Data.DataColumn value in headers)
+                {
+                    row.Cell(cellIndex).Value = value.ColumnName;
                     cellIndex++;
                 }
                 rowIndex++;
