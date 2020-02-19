@@ -2795,7 +2795,8 @@ namespace Helpy
         {
             IXLWorksheet workSheet = sheetName == null ? Workbook.Worksheet(1) : Workbook.Worksheet(sheetName);
             IXLRow rowSheet = null;
-            int rowIndex = workSheet.LastRowUsed().RowNumber() + 1;
+            IXLRow lastRow = workSheet.LastRowUsed();
+            int rowIndex = lastRow == null ? 1 : lastRow.RowNumber() + 1;
             string currentSheetName = workSheet.Name;
 
             int cellIndex = 1;
@@ -2821,7 +2822,8 @@ namespace Helpy
         public void Append(IEnumerable<IEnumerable<string>> rows, string sheetName = null)
         {
             IXLWorksheet workSheet = sheetName == null ? Workbook.Worksheets.First() : Workbook.Worksheet(sheetName);
-            int rowIndex = workSheet.LastRowUsed().RowNumber() + 1;
+            IXLRow lastRow = workSheet.LastRowUsed();
+            int rowIndex = lastRow == null ? 1 : lastRow.RowNumber() + 1;
             string currentSheetName = workSheet.Name;
 
             if (rowIndex > LimitPerSheet + 1)
@@ -2854,7 +2856,8 @@ namespace Helpy
         public void AppendFromObject<T>(T row, string sheetName = null) where T : class
         {
             IXLWorksheet workSheet = sheetName == null ? Workbook.Worksheet(1) : Workbook.Worksheet(sheetName);
-            int rowIndex = workSheet.LastRowUsed().RowNumber() + 1;
+            IXLRow lastRow = workSheet.LastRowUsed();
+            int rowIndex = lastRow == null ? 1 : lastRow.RowNumber() + 1;
             int cellIndex = 1;
             IXLRow rowSheet = null;
             string currentSheetName = workSheet.Name;
@@ -2917,7 +2920,8 @@ namespace Helpy
         public void Append(IDictionary<string, string> row, string sheetName = null)
         {
             IXLWorksheet workSheet = sheetName == null ? Workbook.Worksheets.First() : Workbook.Worksheets.Worksheet(sheetName);
-            int rowIndex = workSheet.LastRowUsed().RowNumber() + 1;
+            IXLRow lastRow = workSheet.LastRowUsed();
+            int rowIndex = lastRow == null ? 1 : lastRow.RowNumber() + 1;
             int cellIndex = 1;
             IXLRow rowSheet = null;
             string currentSheetName = workSheet.Name;
@@ -2942,7 +2946,8 @@ namespace Helpy
         public void Append(IEnumerable<IDictionary<string, string>> rows, string sheetName = null)
         {
             IXLWorksheet workSheet = sheetName == null ? Workbook.Worksheets.First() : Workbook.Worksheets.Worksheet(sheetName);
-            int rowIndex = workSheet.LastRowUsed().RowNumber() + 1;
+            IXLRow lastRow = workSheet.LastRowUsed();
+            int rowIndex = lastRow == null ? 1 : lastRow.RowNumber() + 1;
             string currentSheetName = workSheet.Name;
 
             if (rowIndex > LimitPerSheet + 1)
