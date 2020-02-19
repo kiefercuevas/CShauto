@@ -3092,7 +3092,8 @@ namespace Helpy
 
             XLWorkbook CurrentWorkBook = new XLWorkbook(path);
             IXLWorksheet workSheet = sheetName == null ? CurrentWorkBook.Worksheet(1) : CurrentWorkBook.Worksheet(sheetName);
-            int rowIndex = workSheet.LastRowUsed().RowNumber() + 1;
+            IXLRow lastRow = workSheet.LastRowUsed();
+            int rowIndex = lastRow == null ? 1 : lastRow.RowNumber() + 1;
             string currentSheetName = workSheet.Name;
 
             foreach (IEnumerable<string> row in rows)
@@ -3125,7 +3126,8 @@ namespace Helpy
 
             XLWorkbook CurrentWorkBook = new XLWorkbook(path);
             IXLWorksheet workSheet = sheetName == null ? CurrentWorkBook.Worksheet(1) : CurrentWorkBook.Worksheet(sheetName);
-            int rowIndex = workSheet.LastRowUsed().RowNumber() + 1;
+            IXLRow lastRow = workSheet.LastRowUsed();
+            int rowIndex = lastRow == null ? 1 : lastRow.RowNumber() + 1;
             string currentSheetName = workSheet.Name;
 
             foreach (T row in rows)
@@ -3162,7 +3164,8 @@ namespace Helpy
 
             XLWorkbook CurrentWorkBook = new XLWorkbook(path, XLEventTracking.Disabled);
             IXLWorksheet workSheet = sheetName == null ? CurrentWorkBook.Worksheet(1) : CurrentWorkBook.Worksheet(sheetName);
-            int rowIndex = workSheet.LastRowUsed().RowNumber() + 1;
+            IXLRow lastRow = workSheet.LastRowUsed();
+            int rowIndex = lastRow == null ? 1 : lastRow.RowNumber() + 1;
             string currentSheetName = workSheet.Name;
 
             foreach (IDictionary<string, string> row in rows)
