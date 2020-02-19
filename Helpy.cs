@@ -682,7 +682,7 @@ namespace Helpy
                 {
                     info.Status = false;
                     box.Rect = rect;
-                    box.ImgName = Path.GetFileName(path);
+                    box.ImgName = path;
                     break;
                 }
             }
@@ -715,7 +715,7 @@ namespace Helpy
                 if (rect != null)
                 {
                     info.imgs.Add(rect);
-                    info.filenames.Add(Path.GetFileName(path));
+                    info.filenames.Add(path);
                     break;
                 }
             }
