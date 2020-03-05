@@ -2032,7 +2032,7 @@ namespace Helpy
         /// <param name="name">Name of the process</param>
         /// <param name="attempts">Amount of tries that it will look for the window</param>
         /// <param name="waitInterval">Amount ot time it will stop the thread while waiting for the windows in each attemp</param>
-        public static Window GetWindowWithParcialName(string name, int attempts = 1, int waitInterval = 1000)
+        public static Window GetWindowWithPartialName(string name, int attempts = 1, int waitInterval = 1000)
         {
             IEnumerable<Process> currentProcesses = Process.GetProcesses();
             int counter = 0;
@@ -2053,7 +2053,7 @@ namespace Helpy
         /// <param name="name">Name of the process</param>
         /// <param name="attempts">Amount of tries that it will look for at least one window</param>
         /// <param name="waitInterval">Amount ot time it will stop the thread while waiting for the windows in each attemp</param>
-        public static IEnumerable<Window> GetWindowsWithParcialName(string name, int attempts = 1, int waitInterval = 1000)
+        public static IEnumerable<Window> GetWindowsWithPartialName(string name, int attempts = 1, int waitInterval = 1000)
         {
             IEnumerable<Process> currentProcesses = Process.GetProcesses();
             ICollection<Window> windows = new List<Window>();
