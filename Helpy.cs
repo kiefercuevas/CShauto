@@ -2378,7 +2378,7 @@ namespace Helpy
         ///<summary>Set the default limit for rows in an excel sheet</summary>
         public static int DefaultLimit = 200000;
         ///<summary>Get or set the default name for an excel sheet</summary>
-        public static string DefaultSheetName = "Sheet1";
+        private static string DefaultSheetName = "Sheet1";
         ///<summary>Get or set the default name for an excel file</summary>
         public static string DefaultFileName = "Book.xlsx";
         ///<summary>Get the rows limit for and excel sheet</summary>
@@ -2402,7 +2402,7 @@ namespace Helpy
 
         ///<summary>Creates and excel file with a given sheetName and a maximun rows per sheet</summary>
         /// <param name="sheetName">Name of the sheet to assing when the file is created, default Sheet1</param>
-        /// <param name="maxRowPerSheet">Amount of rows allowed per file default 50,000, max 1,048,576</param>
+        /// <param name="maxRowPerSheet">Amount of rows allowed per file default 200,000 max 1,048,576</param>
         public Excel(string sheetName, int maxRowPerSheet = 200000)
         {
             Workbook = new XLWorkbook(XLEventTracking.Disabled);
@@ -2414,12 +2414,12 @@ namespace Helpy
 
         ///<summary>Loads and Excel file</summary>
         /// <param name="path">Path of the file</param>
-        /// <param name="maxRowPerSheet">Amount of rows allowed per file default 50,000, max 1,048,576</param>
+        /// <param name="maxRowPerSheet">Amount of rows allowed per file default 200,000 max 1,048,576</param>
         public static Excel Load(string path, int maxRowPerSheet = 200000)
         {
             Excel newEx = new Excel();
             newEx.Workbook = new XLWorkbook(path, XLEventTracking.Disabled);
-            newEx.SheetNames = newEx.Workbook.Worksheets.Count > 0 ? newEx.Workbook.Worksheets.Select(w => w.Name).ToList() : null;
+            newEx.SheetNames = newEx.Workbook.Worksheets.Count > 0 ? newEx.Workbook.Worksheets.Select(w => w.Name).ToList() : new List<string>();
             newEx.LimitPerSheet = maxRowPerSheet == 0 ? DefaultLimit : maxRowPerSheet;
             newEx.IsValidLimitPerSheet();
             return newEx;
@@ -2481,7 +2481,40 @@ namespace Helpy
                 int rowIndex = 1;
                 foreach (string header in customHeaders)
                 {
-                    row.Cell(rowIndex).Value = header;
+                    row.Cell(rowIndex).SetValue<string>(header);
+                    rowIndex += 1;
+                }
+            }
+        }
+
+        ///<summary>Change headers of the file, if the file is new add headers to the first row</summary>
+        /// <param name="Workbook">The current workbook to use to set the header</param>
+        /// <param name="customHeaders">Headers to add</param>
+        /// <param name="sheetName">Name of the sheet to use to add new headers</param>
+        private static void SetHeaders(IXLWorkbook Workbook, IEnumerable<string> customHeaders, string sheetName = null)
+        {
+            if (customHeaders != null)
+            {
+                IXLWorksheet workSheet = !string.IsNullOrWhiteSpace(sheetName) ? Workbook.Worksheet(sheetName) : Workbook.Worksheet(1);
+                IXLRow row = workSheet.FirstRow();
+                int rowIndex = 1;
+                foreach (string header in customHeaders)
+                {
+                    row.Cell(rowIndex).SetValue<string>(header);
+                    rowIndex += 1;
+                }
+            }
+        }
+
+        private static void SetHeaders(IEnumerable<string> headers, IXLWorksheet workSheet)
+        {
+            if (headers != null)
+            {
+                int rowIndex = 1;
+                IXLRow row = workSheet.FirstRow();
+                foreach (string header in headers)
+                {
+                    row.Cell(rowIndex).SetValue<string>(header);
                     rowIndex += 1;
                 }
             }
@@ -2494,132 +2527,33 @@ namespace Helpy
         public IEnumerable<string> GetHeaders(string sheetName = null)
         {
             IXLWorksheet workSheet = !string.IsNullOrWhiteSpace(sheetName) ? Workbook.Worksheet(sheetName) : Workbook.Worksheet(1);
-            return workSheet.FirstRow().CellsUsed().Select(c => c.GetString());
+            return workSheet.FirstRow().CellsUsed(XLCellsUsedOptions.Contents).Select(c => c.GetString()).ToList();
+        }
+
+        private IEnumerable<string> GetHeaders(IXLWorksheet workSheet)
+        {
+            return workSheet.FirstRow().CellsUsed(XLCellsUsedOptions.Contents).Select(c => c.GetString()).ToList();
         }
 
         ///<summary>Get all data of the current excel file sheet as a list of dictionaries</summary>
         /// <param name="sheetName">Name of the sheet to get the data, if null it will use the first sheet</param>
         /// <param name="customHeaders">Headers to use as keys to the dictionary that represends a row</param>
-        /// <param name="countEmptyRows">If is true, it will brings empty rows that where use in the file</param>
-        public IEnumerable<IDictionary<string, string>> Extract(string sheetName = null, IEnumerable<string> customHeaders = null, bool countEmptyRows = false)
+        public IEnumerable<IDictionary<string, object>> Extract(string sheetName = null, IEnumerable<string> customHeaders = null)
         {
-            IList<IDictionary<string, string>> dictList = new List<IDictionary<string, string>>();
+            IList<IDictionary<string, object>> dictList = new List<IDictionary<string, object>>();
             IXLWorksheet workSheet = string.IsNullOrWhiteSpace(sheetName) ? Workbook.Worksheet(1) : Workbook.Worksheet(sheetName);
-            IXLRow firstRow = workSheet.FirstRow();
+            IList<string> headers = (customHeaders == null ? GetHeaders(workSheet) : customHeaders).ToList();
 
-            if (firstRow != null)
+            foreach (IXLRow row in workSheet.RowsUsed(XLCellsUsedOptions.Contents).Skip(customHeaders == null ? 1 : 0))
             {
-                IList<string> headers = (customHeaders == null ? firstRow.Cells().Select(c => c.Value.ToString()) : customHeaders).ToList();
-                IEnumerable<IXLRow> rows = countEmptyRows ? workSheet.Rows() : workSheet.RowsUsed();
-
-                foreach (IXLRow row in rows.Skip(customHeaders == null ? 1 : 0))
+                IDictionary<string, object> dict = new Dictionary<string, object>();
+                for (int i = 0; i < headers.Count; i++)
                 {
-                    IDictionary<string, string> dict = new Dictionary<string, string>();
-                    for (int i = 0; i < headers.Count; i++)
-                    {
-                        dict.Add(headers[i], row.Cell(i + 1).Value.ToString());
-                    }
-                    dictList.Add(dict);
+                    dict.Add(headers[i], row.Cell(i + 1).Value);
                 }
+                dictList.Add(dict);
             }
             return dictList;
-        }
-
-        /// <summary>Get all data of the current excel file  as a datatable</summary>
-        /// <param name="sheetName">Name of the sheet to get the data, if null it will use the first sheet</param>
-        /// <param name="customHeaders">Headers to use as keys to the dictionary that represends a row</param>
-        /// <param name="countEmptyRows">If is true, it will brings empty rows that where use in the file</param>
-        public System.Data.DataTable ExtractToDatatable(string sheetName = null, IEnumerable<string> customHeaders = null, bool countEmptyRows = false)
-        {
-            System.Data.DataTable table = new System.Data.DataTable();
-            IXLWorksheet workSheet = string.IsNullOrWhiteSpace(sheetName) ? Workbook.Worksheet(1) : Workbook.Worksheet(sheetName);
-            IXLRow firstRow = workSheet.FirstRow();
-
-            if (firstRow != null)
-            {
-                IList<string> headers = (customHeaders == null ? firstRow.Cells().Select(c => c.Value.ToString()) : customHeaders).ToList();
-                IEnumerable<IXLRow> rows = countEmptyRows ? workSheet.Rows() : workSheet.RowsUsed();
-
-                foreach (string header in headers)
-                {
-                    table.Columns.Add(header, typeof(string));
-                }
-
-                foreach (IXLRow row in rows.Skip(customHeaders == null ? 1 : 0))
-                {
-                    System.Data.DataRow dataRow = table.NewRow();
-                    dataRow.ItemArray = row.CellsUsed().Select(c => c.Value).ToArray();
-                    table.Rows.Add(dataRow);
-                }
-            }
-            return table;
-        }
-
-        ///<summary>Get all data of the current excel file sheet and cast it to an specified object if possible</summary>
-        /// <param name="sheetName">Name of the sheet to get the data, if null it will use the first sheet</param>
-        /// <param name="customHeaders">Headers to use to reflect the objets variable names of your class</param>
-        /// <param name="countEmptyRows">if is true, it will brings empty rows that where use in the file</param>
-        public IEnumerable<T> ExtractFromObject<T>(string sheetName = null, IEnumerable<string> customHeaders = null, bool countEmptyRows = false) where T : new()
-        {
-            IList<T> dictList = new List<T>();
-            IXLWorksheet workSheet = string.IsNullOrWhiteSpace(sheetName) ? Workbook.Worksheet(1) : Workbook.Worksheet(sheetName);
-
-            IXLRow firstRow = workSheet.FirstRow();
-            if (firstRow != null)
-            {
-                IList<string> headers = (customHeaders == null ? firstRow.Cells().Select(c => c.GetString()) : customHeaders).ToList();
-                IEnumerable<IXLRow> rows = countEmptyRows ? workSheet.Rows() : workSheet.RowsUsed();
-
-                foreach (IXLRow row in rows.Skip(customHeaders == null ? 1 : 0))
-                {
-                    IDictionary<string, string> dict = new Dictionary<string, string>();
-                    for (int i = 0; i < headers.Count; i++)
-                    {
-                        dict.Add(headers[i], row.Cell(i + 1).Value.ToString());
-                    }
-                    dictList.Add(DictToObject<T>(dict));
-                }
-            }
-            return dictList;
-        }
-
-        ///<summary>Get all data of the current excel file for all sheets as list of list of dictionaries where each list represents a sheet</summary>
-        /// <param name="customHeaders">Headers to use as keys to the dictionary that represends a row</param>
-        /// <param name="countEmptyRows">If is true, it will brings empty rows that where use in the file</param>
-        public IEnumerable<IEnumerable<IDictionary<string, string>>> ExtractAll(IEnumerable<string> customHeaders = null, bool countEmptyRows = false)
-        {
-            ICollection<IEnumerable<IDictionary<string, string>>> listOfListDict = new List<IEnumerable<IDictionary<string, string>>>();
-            foreach (string name in SheetNames)
-            {
-                listOfListDict.Add(Extract(name, customHeaders, countEmptyRows));
-            }
-            return listOfListDict;
-        }
-
-        ///<summary>Get all data of the current excel file for all sheets as a list of list of objects, where each list represents a sheet</summary>
-        /// <param name="customHeaders">Headers to use as keys to the dictionary that represends a row</param>
-        /// <param name="countEmptyRows">If is true, it will brings empty rows that where use in the file</param>
-        public IEnumerable<IEnumerable<T>> ExtractAllFromObject<T>(IEnumerable<string> customHeaders = null, bool countEmptyRows = false) where T : new()
-        {
-            ICollection<IEnumerable<T>> listOfList = new List<IEnumerable<T>>();
-            foreach (string name in SheetNames)
-            {
-                listOfList.Add(ExtractFromObject<T>(name, customHeaders, countEmptyRows));
-            }
-            return listOfList;
-        }
-
-        ///<summary>Get all data of the current excel file for all sheets as list of datatable where each datatable represents a sheet</summary>
-        /// <param name="customHeaders">Headers to use as keys to the dictionary that represends a row</param>
-        /// <param name="countEmptyRows">If is true, it will brings empty rows that where use in the file</param>
-        public IEnumerable<System.Data.DataTable> ExtractAllToDatatable(IEnumerable<string> customHeaders = null, bool countEmptyRows = false)
-        {
-            ICollection<System.Data.DataTable> listOfDatatable = new List<System.Data.DataTable>();
-            foreach (string name in SheetNames)
-            {
-                listOfDatatable.Add(ExtractToDatatable(name, customHeaders, countEmptyRows));
-            }
-            return listOfDatatable;
         }
 
         ///<summary>Get all data of the current excel file sheet as a list of dictionaries starting and ending from the specified params</summary>
@@ -2627,64 +2561,110 @@ namespace Helpy
         /// <param name="endRow">Row to stop to take the data</param>
         /// <param name="sheetName">Name of the sheet to get the data, if null it will use the first sheet</param>
         /// <param name="customHeaders">Headers to use as keys to the dictionary that represends a row</param>
-        /// <param name="countEmptyRows">If is true, it will brings empty rows that where use in the file</param>
-        public IEnumerable<IDictionary<string, string>> Paginate(int startRow, int endRow, string sheetName = null, IEnumerable<string> customHeaders = null, bool countEmptyRows = false)
+        public IEnumerable<IDictionary<string, object>> Extract(int startRow, int endRow, string sheetName = null, IEnumerable<string> customHeaders = null)
         {
-            ICollection<IDictionary<string, string>> dictList = new List<IDictionary<string, string>>();
-            IXLWorksheet workSheet = !string.IsNullOrWhiteSpace(sheetName) ? Workbook.Worksheets.SingleOrDefault(w => w.Name.ToLower() == sheetName.ToLower()) : Workbook.Worksheet(1);
+            IList<IDictionary<string, object>> dictList = new List<IDictionary<string, object>>();
+            IXLWorksheet workSheet = string.IsNullOrWhiteSpace(sheetName) ? Workbook.Worksheet(1) : Workbook.Worksheet(sheetName);
+            IList<string> headers = (customHeaders == null ? GetHeaders(workSheet) : customHeaders).ToList();
 
-            if (workSheet == null)
-                throw new Exception(string.Format("The sheetName {0} is not valid", sheetName));
-
-            IXLRow firstRow = workSheet.FirstRow();
-            if (firstRow != null)
+            foreach (IXLRow row in workSheet.RowsUsed(XLCellsUsedOptions.Contents).Skip(customHeaders == null ? 1 : 0).Skip(startRow).Take(endRow))
             {
-                IList<string> headers = (customHeaders == null ? firstRow.Cells().Select(c => c.Value.ToString()) : customHeaders).ToList();
-                IEnumerable<IXLRow> rows = countEmptyRows ? workSheet.Rows(startRow, endRow) : workSheet.RowsUsed().Skip(startRow).Take(endRow);
-
-                foreach (IXLRow row in rows.Skip(customHeaders == null ? 1 : 0))
+                IDictionary<string, object> dict = new Dictionary<string, object>();
+                for (int i = 0; i < headers.Count; i++)
                 {
-                    IDictionary<string, string> dict = new Dictionary<string, string>();
-                    for (int i = 0; i < headers.Count; i++)
-                    {
-                        dict.Add(headers[i], row.Cell(i + 1).GetString());
-                    }
-                    dictList.Add(dict);
+                    dict.Add(headers[i], row.Cell(i + 1).Value);
                 }
+                dictList.Add(dict);
             }
             return dictList;
+        }
+
+        ///<summary>Get all data of the current excel file for all sheets as list of list of dictionaries where each list represents a sheet</summary>
+        /// <param name="customHeaders">Headers to use as keys to the dictionary that represends a row</param>
+        public IEnumerable<IEnumerable<IDictionary<string, object>>> ExtractAll(IEnumerable<string> customHeaders = null)
+        {
+            ICollection<IEnumerable<IDictionary<string, object>>> listOfListDict = new List<IEnumerable<IDictionary<string, object>>>();
+            foreach (string name in SheetNames)
+            {
+                listOfListDict.Add(Extract(name, customHeaders));
+            }
+            return listOfListDict;
+        }
+
+        /// <summary>Get all data of the current excel file  as a datatable</summary>
+        /// <param name="sheetName">Name of the sheet to get the data, if null it will use the first sheet</param>
+        /// <param name="customHeaders">Headers to use as keys to the dictionary that represends a row</param>
+        public System.Data.DataTable ExtractToDatatable(string sheetName = null, IEnumerable<string> customHeaders = null)
+        {
+            System.Data.DataTable table = new System.Data.DataTable();
+            IXLWorksheet workSheet = string.IsNullOrWhiteSpace(sheetName) ? Workbook.Worksheet(1) : Workbook.Worksheet(sheetName);
+            IEnumerable<string> headers = customHeaders == null ? GetHeaders(workSheet) : customHeaders;
+
+            table.TableName = workSheet.Name;
+
+            foreach (string header in headers)
+                table.Columns.Add(header);
+
+            foreach (IXLRow row in workSheet.RowsUsed().Skip(customHeaders == null ? 1 : 0))
+            {
+                System.Data.DataRow dataRow = table.NewRow();
+                dataRow.ItemArray = row.CellsUsed(XLCellsUsedOptions.Contents).Select(c => c.Value).ToArray();
+                table.Rows.Add(dataRow);
+            }
+            return table;
         }
 
         ///<summary>Get all data of the current excel file sheet as a datatable starting and ending from the specified params</summary>
         ///<param name="startRow">Row to start to take the data</param>
         /// <param name="endRow">Row to stop to take the data</param>
         /// <param name="sheetName">Name of the sheet to get the data, if null it will use the first sheet</param>
-        /// <param name="customHeaders">Headers to use as keys to the dictionary that represends a row</param>
-        /// <param name="countEmptyRows">If is true, it will brings empty rows that where use in the file</param>
-        public System.Data.DataTable PaginateToDatatable(int startRow, int endRow, string sheetName = null, IEnumerable<string> customHeaders = null, bool countEmptyRows = false)
+        /// <param name="customHeaders">Headers to use as keys to the dictionary that represends a row</param> 
+        public System.Data.DataTable ExtractToDatatable(int startRow, int endRow, string sheetName = null, IEnumerable<string> customHeaders = null)
         {
             System.Data.DataTable table = new System.Data.DataTable();
             IXLWorksheet workSheet = string.IsNullOrWhiteSpace(sheetName) ? Workbook.Worksheet(1) : Workbook.Worksheet(sheetName);
-            IXLRow firstRow = workSheet.FirstRow();
+            IEnumerable<string> headers = customHeaders == null ? GetHeaders(workSheet) : customHeaders;
 
-            if (firstRow != null)
+            table.TableName = workSheet.Name;
+
+            foreach (string header in headers)
+                table.Columns.Add(header);
+
+            foreach (IXLRow row in workSheet.RowsUsed().Skip(customHeaders == null ? 1 : 0).Skip(startRow).Take(endRow))
             {
-                IList<string> headers = (customHeaders == null ? firstRow.Cells().Select(c => c.Value.ToString()) : customHeaders).ToList();
-                IEnumerable<IXLRow> rows = countEmptyRows ? workSheet.Rows(startRow, endRow) : workSheet.RowsUsed().Skip(startRow).Take(endRow);
-
-                foreach (string header in headers)
-                {
-                    table.Columns.Add(header, typeof(string));
-                }
-
-                foreach (IXLRow row in rows.Skip(customHeaders == null ? 1 : 0))
-                {
-                    System.Data.DataRow dataRow = table.NewRow();
-                    dataRow.ItemArray = row.CellsUsed().Select(c => c.Value).ToArray();
-                    table.Rows.Add(dataRow);
-                }
+                System.Data.DataRow dataRow = table.NewRow();
+                dataRow.ItemArray = row.CellsUsed(XLCellsUsedOptions.Contents).Select(c => c.Value).ToArray();
+                table.Rows.Add(dataRow);
             }
             return table;
+        }
+
+        ///<summary>Get all data of the current excel file for all sheets as list of datatable where each datatable represents a sheet</summary>
+        /// <param name="customHeaders">Headers to use as keys to the dictionary that represends a row</param>
+        public IEnumerable<System.Data.DataTable> ExtractAllToDatatable(IEnumerable<string> customHeaders = null)
+        {
+            ICollection<System.Data.DataTable> listOfDatatable = new List<System.Data.DataTable>();
+            foreach (string name in SheetNames)
+            {
+                listOfDatatable.Add(ExtractToDatatable(name, customHeaders));
+            }
+            return listOfDatatable;
+        }
+
+        ///<summary>Get all data of the current excel file sheet and cast it to an specified object if possible</summary>
+        /// <param name="sheetName">Name of the sheet to get the data, if null it will use the first sheet</param>
+        /// <param name="customHeaders">Headers to use to reflect the objets variable names of your class</param>
+        public IEnumerable<T> ExtractToObject<T>(string sheetName = null, IEnumerable<string> customHeaders = null) where T : new()
+        {
+            IList<T> objectList = new List<T>();
+            IXLWorksheet workSheet = string.IsNullOrWhiteSpace(sheetName) ? Workbook.Worksheet(1) : Workbook.Worksheet(sheetName);
+            IList<string> headers = (customHeaders == null ? GetHeaders(workSheet) : customHeaders).ToList();
+
+            foreach (IXLRow row in workSheet.RowsUsed().Skip(customHeaders == null ? 1 : 0))
+            {
+                objectList.Add(GetObjectFromRow<T>(headers,row));
+            }
+            return objectList;
         }
 
         ///<summary>Get all data of the current excel file for sheet as a list of objets starting and ending from the specified params</summary>
@@ -2692,77 +2672,59 @@ namespace Helpy
         /// <param name="endRow">Row to stop to take the data</param>
         /// <param name="sheetName">Name of the sheet to get the data, if null it will use the first sheet</param>
         /// <param name="customHeaders">Headers to use as keys to the dictionary that represends a row</param>
-        /// <param name="countEmptyRows">If is true, it will brings empty rows that where use in the file</param>
-        public IEnumerable<T> PaginateFromObject<T>(int startRow, int endRow, string sheetName = null, IEnumerable<string> customHeaders = null, bool countEmptyRows = false) where T : new()
+        public IEnumerable<T> ExtractToObject<T>(int startRow, int endRow, string sheetName = null, IEnumerable<string> customHeaders = null) where T : new()
         {
-            IList<T> dictList = new List<T>();
+            IList<T> objectList = new List<T>();
             IXLWorksheet workSheet = string.IsNullOrWhiteSpace(sheetName) ? Workbook.Worksheet(1) : Workbook.Worksheet(sheetName);
+            IList<string> headers = (customHeaders == null ? GetHeaders(workSheet) : customHeaders).ToList();
 
-            IXLRow firstRow = workSheet.FirstRow();
-            if (firstRow != null)
+            foreach (IXLRow row in workSheet.RowsUsed().Skip(customHeaders == null ? 1 : 0).Skip(startRow).Take(endRow))
             {
-                IList<string> headers = (customHeaders == null ? firstRow.Cells().Select(c => c.GetString()) : customHeaders).ToList();
-                IEnumerable<IXLRow> rows = countEmptyRows ? workSheet.Rows(startRow, endRow) : workSheet.RowsUsed().Skip(startRow).Take(endRow);
-
-                foreach (IXLRow row in rows.Skip(customHeaders == null ? 1 : 0))
-                {
-                    IDictionary<string, string> dict = new Dictionary<string, string>();
-                    for (int i = 0; i < headers.Count; i++)
-                    {
-                        dict.Add(headers[i], row.Cell(i + 1).Value.ToString());
-                    }
-                    dictList.Add(DictToObject<T>(dict));
-                }
+                objectList.Add(GetObjectFromRow<T>(headers, row));
             }
-            return dictList;
+            return objectList;
+        }
+
+        ///<summary>Get all data of the current excel file for all sheets as a list of list of objects, where each list represents a sheet</summary>
+        /// <param name="customHeaders">Headers to use as keys to the dictionary that represends a row</param>
+        public IEnumerable<IEnumerable<T>> ExtractAllToObject<T>(IEnumerable<string> customHeaders = null) where T : new()
+        {
+            ICollection<IEnumerable<T>> listOfList = new List<IEnumerable<T>>();
+            foreach (string name in SheetNames)
+            {
+                listOfList.Add(ExtractToObject<T>(name, customHeaders));
+            }
+            return listOfList;
         }
 
         ///<summary>Get a column of the specified file sheet</summary>
         /// <param name="column">Name of the column title in the excel file sheet</param>
         /// <param name="sheetName">Name of the sheet to get the data, if null it will use the first sheet</param>
-        public IEnumerable<string> GetColumn(string column, string sheetName = null)
+        public IEnumerable<T> GetColumn<T>(string column, string sheetName = null) where T: new()
         {
-            ICollection<string> values = new List<string>();
             IXLWorksheet workSheet = string.IsNullOrWhiteSpace(sheetName) ? Workbook.Worksheet(1) : Workbook.Worksheet(sheetName);
-            IXLRow headers = workSheet.FirstRow();
-            bool validCol = false;
+            List<string> headers = GetHeaders(workSheet).ToList();
+            int index = headers.IndexOf(column);
 
-            int index = 1;
-            foreach (IXLCell cell in headers.Cells())
-            {
-                if (cell.Value.ToString().ToLower() == column.ToLower())
-                {
-                    validCol = true;
-                    break;
-                }
-                index += 1;
-            }
-
-            if (!validCol)
+            if (index < 0)
                 throw new Exception(string.Format("The column {0} is not valid", column));
 
-            foreach (IXLCell cell in workSheet.Column(index).Cells())
-                values.Add(cell.GetString());
-
-            return values;
+            return workSheet.Column(index).CellsUsed(XLCellsUsedOptions.Contents).Skip(1).Select(c => c.GetValue<T>()).ToList();
         }
 
         ///<summary>Get a column of the specified file sheet</summary>
         /// <param name="column">Index of the column starting from 1 in the excel file sheet</param>
         /// <param name="sheetName">Name of the sheet to get the data, if null it will use the first sheet</param>
-        public IEnumerable<string> GetColumn(int column, string sheetName = null)
+        public IEnumerable<T> GetColumn<T>(int column, string sheetName = null) where T : new()
         {
             ICollection<string> values = new List<string>();
             IXLWorksheet workSheet = string.IsNullOrWhiteSpace(sheetName) ? Workbook.Worksheet(1) : Workbook.Worksheet(sheetName);
             IXLRow headers = workSheet.FirstRow();
 
-            if (column < 1 || column > workSheet.ColumnCount())
+            if (column < 1 || column > workSheet.ColumnsUsed().Count())
                 throw new Exception(string.Format("The column index {0} is not valid", column));
 
-            foreach (IXLCell cell in workSheet.Column(column).Cells())
-                values.Add(cell.GetString());
-
-            return values;
+            return workSheet.Column(column).CellsUsed(XLCellsUsedOptions.Contents).Skip(1).Select(c => c.GetValue<T>()).ToList();
         }
 
         ///<summary>Creates a new excel file</summary>
@@ -2770,37 +2732,33 @@ namespace Helpy
         /// <param name="rows">Data to add to the new excel file as list of list where each list repressent a row</param>
         /// <param name="headers">Titles of the excel file, if null it will start adding rows from the first file</param>
         /// <param name="sheetName">Name of the sheet to get the data, if null it will use the first sheet</param>
-        public static void Create(string path, IEnumerable<IEnumerable<string>> rows, IEnumerable<string> headers = null, string sheetName = null)
+        public static void Create(string path, IEnumerable<object[]> rows, IEnumerable<string> headers = null, string sheetName = null)
         {
-
             string folder = Path.GetDirectoryName(path);
             ValidateFolder(folder);
 
-            int rowIndex = 1;
-            XLWorkbook NewWorkBook = new XLWorkbook();
-            IXLWorksheet workSheet = sheetName == null ? NewWorkBook.Worksheets.Add(DefaultSheetName) : NewWorkBook.Worksheets.Add(sheetName);
-            string currentSheetName = workSheet.Name;
+            int iterations = 0;
+            int amountOfItems = rows.Count();
+            int amountOfItemsToSkip = DefaultLimit * iterations;
+            XLWorkbook newWorkBook = new XLWorkbook();
+            IXLWorksheet workSheet = sheetName == null ? newWorkBook.Worksheets.Add(DefaultSheetName) : newWorkBook.Worksheets.Add(sheetName);
+            int currentDefaultLimit = DefaultLimit == MaxRowLimit ? DefaultLimit - 1 : DefaultLimit;
 
-            if (headers != null)
-                rowIndex = AddHeaders(workSheet, headers);
+            SetHeaders(headers, workSheet);
 
-            foreach (IEnumerable<string> row in rows)
+            while (amountOfItemsToSkip < amountOfItems)
             {
-                int cellIndex = 1;
-                foreach (string value in row)
-                {
-                    workSheet.Row(rowIndex).Cell(cellIndex).Value = value;
-                    cellIndex++;
-                }
+                workSheet.Cell(2, 1).InsertData(rows.Skip(amountOfItemsToSkip).Take(currentDefaultLimit));
+                iterations++;
+                amountOfItemsToSkip = currentDefaultLimit * iterations;
 
-                rowIndex++;
-                if (rowIndex > DefaultLimit + 1)
-                {
-                    workSheet = PrepareNewSheet(NewWorkBook, workSheet, currentSheetName);
-                    rowIndex = 2;
-                }
+                if (amountOfItemsToSkip >= amountOfItems)
+                    break;
+
+                workSheet = PrepareNewSheet(newWorkBook, workSheet);
             }
-            NewWorkBook.SaveAs(path);
+
+            newWorkBook.SaveAs(path);
         }
 
         ///<summary>Creates a new excel file</summary>
@@ -2810,36 +2768,30 @@ namespace Helpy
         /// <param name="sheetName">Name of the sheet to get the data, if null it will use the first sheet</param>
         public static void CreateFromObject<T>(string path, IEnumerable<T> rows, string sheetName = null) where T : class
         {
-            int rowIndex = 1;
             string folder = Path.GetDirectoryName(path);
             ValidateFolder(folder);
 
-            XLWorkbook NewWorkBook = new XLWorkbook();
-            IXLWorksheet workSheet = sheetName == null ? NewWorkBook.Worksheets.Add(DefaultSheetName) : NewWorkBook.Worksheets.Add(sheetName);
-            string currentSheetName = workSheet.Name;
+            int iterations = 0;
+            int amountOfItems = rows.Count();
+            int amountOfItemsToSkip = DefaultLimit * iterations;
+            XLWorkbook newWorkBook = new XLWorkbook();
 
-            if (rows.Count() > 0)
-                rowIndex = AddHeaders(workSheet, rows.First().GetType().GetProperties().Select(p => p.Name));
+            IXLWorksheet workSheet = sheetName == null ? newWorkBook.Worksheets.Add(DefaultSheetName) : newWorkBook.Worksheets.Add(sheetName);
+            int currentDefaultLimit = DefaultLimit == MaxRowLimit ? DefaultLimit - 1 : DefaultLimit;
 
-            foreach (T row in rows)
+            while (amountOfItemsToSkip < amountOfItems)
             {
-                int cellIndex = 1;
-                foreach (PropertyInfo prop in row.GetType().GetProperties())
-                {
-                    if (IsValidPropertyType(prop.PropertyType))
-                    {
-                        workSheet.Row(rowIndex).Cell(cellIndex).Value = prop.GetValue(row, null);
-                        cellIndex++;
-                    }
-                }
-                rowIndex++;
-                if (rowIndex > DefaultLimit + 1)
-                {
-                    workSheet = PrepareNewSheet(NewWorkBook, workSheet, currentSheetName);
-                    rowIndex = 2;
-                }
+                workSheet.Cell(1, 1).InsertData(rows.Skip(amountOfItemsToSkip).Take(currentDefaultLimit));
+
+                iterations++;
+                amountOfItemsToSkip = currentDefaultLimit * iterations;
+
+                if (amountOfItemsToSkip >= amountOfItems)
+                    break;
+
+                workSheet = PrepareNewSheet(newWorkBook, workSheet);
             }
-            NewWorkBook.SaveAs(path);
+            newWorkBook.SaveAs(path);
         }
 
         ///<summary>Creates a new excel file</summary>
@@ -2847,36 +2799,37 @@ namespace Helpy
         /// <param name="rows">Data to add to the new excel file as list of dictionaries where each dictionary represents a row</param>
         /// <param name="headers">Titles of the excel file, if null it will start adding rows from the first file</param>
         /// <param name="sheetName">Name of the sheet to get the data, if null it will use the first sheet</param>
-        public static void Create(string path, IEnumerable<IDictionary<string, string>> rows, string sheetName = null)
+        public static void Create(string path, IEnumerable<IDictionary<string, object>> rows, string sheetName = null)
         {
             string folder = Path.GetDirectoryName(path);
             ValidateFolder(folder);
 
-            int rowIndex = 1;
-            XLWorkbook NewWorkBook = new XLWorkbook(XLEventTracking.Disabled);
-            IXLWorksheet workSheet = sheetName == null ? NewWorkBook.Worksheets.Add(DefaultSheetName) : NewWorkBook.Worksheets.Add(sheetName);
-            string currentSheetName = workSheet.Name;
+            int iterations = 0;
+            int amountOfItems = rows.Count();
+            int amountOfItemsToSkip = DefaultLimit * iterations;
+            XLWorkbook newWorkBook = new XLWorkbook();
+            IXLWorksheet workSheet = sheetName == null ? newWorkBook.Worksheets.Add(DefaultSheetName) : newWorkBook.Worksheets.Add(sheetName);
+            int currentDefaultLimit = DefaultLimit == MaxRowLimit ? DefaultLimit - 1 : DefaultLimit;
+            IDictionary<string,object> firstRow = rows.FirstOrDefault();
 
-            if (rows.Count() > 0)
-                rowIndex = AddHeaders(workSheet, rows.First().Keys);
+            if (firstRow == null)
+                throw new Exception("There must be at least 1 row in rows data");
 
-            foreach (IDictionary<string, string> row in rows)
+            AddHeaders(workSheet, firstRow.Keys);
+
+            while (amountOfItemsToSkip < amountOfItems)
             {
-                int cellIndex = 1;
-                foreach (string value in row.Values)
-                {
-                    workSheet.Row(rowIndex).Cell(cellIndex).Value = value;
-                    cellIndex++;
-                }
+                workSheet.Cell(2, 1).InsertData(rows.Skip(amountOfItemsToSkip).Take(currentDefaultLimit).Select(r => r.Values.ToArray()));
+                iterations++;
+                amountOfItemsToSkip = currentDefaultLimit * iterations;
 
-                rowIndex++;
-                if (rowIndex > DefaultLimit + 1)
-                {
-                    workSheet = PrepareNewSheet(NewWorkBook, workSheet, currentSheetName);
-                    rowIndex = 2;
-                }
+                if (amountOfItemsToSkip >= amountOfItems)
+                    break;
+
+                workSheet = PrepareNewSheet(newWorkBook, workSheet);
             }
-            NewWorkBook.SaveAs(path);
+
+            newWorkBook.SaveAs(path);
         }
 
         ///<summary>Creates a new excel file</summary>
@@ -2889,53 +2842,33 @@ namespace Helpy
             string folder = Path.GetDirectoryName(path);
             ValidateFolder(folder);
 
-            int rowIndex = 1;
-            XLWorkbook NewWorkBook = new XLWorkbook(XLEventTracking.Disabled);
-            IXLWorksheet workSheet = sheetName == null ? NewWorkBook.Worksheets.Add(DefaultSheetName) : NewWorkBook.Worksheets.Add(sheetName);
-            string currentSheetName = workSheet.Name;
+            XLWorkbook newWorkBook = new XLWorkbook();
+            IXLWorksheet workSheet = sheetName == null ? newWorkBook.Worksheets.Add(DefaultSheetName) : newWorkBook.Worksheets.Add(sheetName);
+            IXLTable xltable = workSheet.Cell(1, 1).InsertTable(table);
+            RemoveTableStyles(xltable);
 
-            rowIndex = AddHeaders(workSheet, table.Columns);
-
-            foreach (System.Data.DataRow row in table.Rows)
-            {
-                int cellIndex = 1;
-                foreach (object value in row.ItemArray)
-                {
-                    workSheet.Row(rowIndex).Cell(cellIndex).Value = value;
-                    cellIndex++;
-                }
-
-                rowIndex++;
-                if (rowIndex > DefaultLimit + 1)
-                {
-                    workSheet = PrepareNewSheet(NewWorkBook, workSheet, currentSheetName);
-                    rowIndex = 2;
-                }
-            }
-            NewWorkBook.SaveAs(path);
+            newWorkBook.SaveAs(path);
         }
 
         ///<summary>Add data to an excel file</summary>
         /// <param name="row">Data to add to the new excel file as list</param>
         /// <param name="sheetName">Name of the sheet to get the data, if null it will use the first sheet</param>
-        public void Append(IEnumerable<string> row, string sheetName = null)
+        public void Append(IEnumerable<object> row, string sheetName = null)
         {
-            IXLWorksheet workSheet = sheetName == null ? Workbook.Worksheet(1) : Workbook.Worksheet(sheetName);
             IXLRow rowSheet = null;
-            IXLRow lastRow = workSheet.LastRowUsed();
+            IXLWorksheet workSheet = sheetName == null ? Workbook.Worksheet(1) : Workbook.Worksheet(sheetName);
+            IXLRow lastRow = workSheet.LastRowUsed(XLCellsUsedOptions.Contents);
             int rowIndex = lastRow == null ? 1 : lastRow.RowNumber() + 1;
-            string currentSheetName = workSheet.Name;
-
             int cellIndex = 1;
 
-            if (rowIndex > LimitPerSheet + 1)
+            if (rowIndex > LimitPerSheet)
             {
-                workSheet = PrepareNewSheet(Workbook, workSheet, currentSheetName);
+                workSheet = PrepareNewSheet(Workbook, workSheet);
                 rowIndex = 2;
             }
 
             rowSheet = workSheet.Row(rowIndex);
-            foreach (string value in row)
+            foreach (object value in row)
             {
                 rowSheet.Cell(cellIndex).Value = value;
                 cellIndex += 1;
@@ -2946,35 +2879,27 @@ namespace Helpy
         ///<summary>Add data to an excel file</summary>
         /// <param name="rows">Data to add to the new excel file as list of list where each list represents a row</param>
         /// <param name="sheetName">Name of the sheet to get the data, if null it will use the first sheet</param>
-        public void Append(IEnumerable<IEnumerable<string>> rows, string sheetName = null)
+        public void Append(IEnumerable<object []> rows, string sheetName = null)
         {
-            IXLWorksheet workSheet = sheetName == null ? Workbook.Worksheets.First() : Workbook.Worksheet(sheetName);
-            IXLRow lastRow = workSheet.LastRowUsed();
+            int iterations = 0;
+            int amountOfItems = rows.Count();
+            int amountOfItemsToSkip = LimitPerSheet * iterations;
+            IXLWorksheet workSheet = sheetName == null ? Workbook.Worksheet(1) : Workbook.Worksheet(sheetName);
+            IXLRow lastRow = workSheet.LastRowUsed(XLCellsUsedOptions.Contents);
             int rowIndex = lastRow == null ? 1 : lastRow.RowNumber() + 1;
-            string currentSheetName = workSheet.Name;
 
-            if (rowIndex > LimitPerSheet + 1)
+            while (amountOfItemsToSkip < amountOfItems)
             {
-                workSheet = PrepareNewSheet(Workbook, workSheet, currentSheetName);
-                rowIndex = 2;
+                workSheet.Cell(rowIndex, 1).InsertData(rows.Skip(amountOfItemsToSkip).Take(LimitPerSheet));
+                iterations++;
+                amountOfItemsToSkip = LimitPerSheet * iterations;
+
+                if (amountOfItemsToSkip >= amountOfItems)
+                    break;
+
+                workSheet = PrepareNewSheet(Workbook, workSheet);
             }
 
-            foreach (IEnumerable<string> row in rows)
-            {
-                int cellIndex = 1;
-                foreach (string value in row)
-                {
-                    workSheet.Row(rowIndex).Cell(cellIndex).Value = value;
-                    cellIndex++;
-                }
-
-                rowIndex++;
-                if (rowIndex > LimitPerSheet + 1)
-                {
-                    workSheet = PrepareNewSheet(Workbook, workSheet, currentSheetName);
-                    rowIndex = 2;
-                }
-            }
         }
 
         ///<summary>Add data to an excel file</summary>
@@ -2983,15 +2908,14 @@ namespace Helpy
         public void AppendFromObject<T>(T row, string sheetName = null) where T : class
         {
             IXLWorksheet workSheet = sheetName == null ? Workbook.Worksheet(1) : Workbook.Worksheet(sheetName);
-            IXLRow lastRow = workSheet.LastRowUsed();
+            IXLRow lastRow = workSheet.LastRowUsed(XLCellsUsedOptions.Contents);
             int rowIndex = lastRow == null ? 1 : lastRow.RowNumber() + 1;
             int cellIndex = 1;
             IXLRow rowSheet = null;
-            string currentSheetName = workSheet.Name;
 
-            if (rowIndex > LimitPerSheet + 1)
+            if (rowIndex > LimitPerSheet )
             {
-                workSheet = PrepareNewSheet(Workbook, workSheet, currentSheetName);
+                workSheet = PrepareNewSheet(Workbook, workSheet);
                 rowIndex = 2;
             }
 
@@ -3012,54 +2936,54 @@ namespace Helpy
         /// <param name="sheetName">Name of the sheet to get the data, if null it will use the first sheet</param>
         public void AppendFromObject<T>(IEnumerable<T> rows, string sheetName = null) where T : class
         {
+            int iterations = 0;
+            int amountOfItems = rows.Count();
+            int amountOfItemsToSkip = LimitPerSheet * iterations;
             IXLWorksheet workSheet = sheetName == null ? Workbook.Worksheets.First() : Workbook.Worksheets.Worksheet(sheetName);
             int rowIndex = workSheet.LastRowUsed().RowNumber() + 1;
-            string currentSheetName = workSheet.Name;
-            if (rowIndex > LimitPerSheet + 1)
-            {
-                workSheet = PrepareNewSheet(Workbook, workSheet, currentSheetName);
-                rowIndex = 2;
-            }
 
-            foreach (T row in rows)
+            while (amountOfItemsToSkip < amountOfItems)
             {
-                int cellIndex = 1;
-                foreach (PropertyInfo prop in row.GetType().GetProperties())
-                {
-                    if (IsValidPropertyType(prop.PropertyType))
-                    {
-                        workSheet.Row(rowIndex).Cell(cellIndex).Value = prop.GetValue(row, null);
-                        cellIndex++;
-                    }
-                }
-                rowIndex++;
-                if (rowIndex > LimitPerSheet + 1)
-                {
-                    workSheet = PrepareNewSheet(Workbook, workSheet, currentSheetName);
-                    rowIndex = 2;
-                }
+                workSheet.Cell(rowIndex, 1).InsertData(rows.Skip(amountOfItemsToSkip).Take(LimitPerSheet));
+
+                iterations++;
+                amountOfItemsToSkip = LimitPerSheet * iterations;
+
+                if (amountOfItemsToSkip >= amountOfItems)
+                    break;
+
+                workSheet = PrepareNewSheet(Workbook, workSheet);
             }
         }
 
         ///<summary>Add data to an excel file</summary>
         /// <param name="row">Data to add to the new excel file as a dictionary</param>
         /// <param name="sheetName">Name of the sheet to get the data, if null it will use the first sheet</param>
-        public void Append(IDictionary<string, string> row, string sheetName = null)
+        public void Append(IDictionary<string, object> row, string sheetName = null)
         {
+            IXLRow rowSheet = null;
             IXLWorksheet workSheet = sheetName == null ? Workbook.Worksheets.First() : Workbook.Worksheets.Worksheet(sheetName);
-            IXLRow lastRow = workSheet.LastRowUsed();
+
+            IXLRow firstRow = workSheet.FirstRowUsed(XLCellsUsedOptions.Contents);
+            IXLRow lastRow = workSheet.LastRowUsed(XLCellsUsedOptions.Contents);
+            
             int rowIndex = lastRow == null ? 1 : lastRow.RowNumber() + 1;
             int cellIndex = 1;
-            IXLRow rowSheet = null;
-            string currentSheetName = workSheet.Name;
-            if (rowIndex > LimitPerSheet + 1)
+
+            if (firstRow == null)
             {
-                workSheet = PrepareNewSheet(Workbook, workSheet, currentSheetName);
+                SetHeaders(row.Keys);
+                rowIndex++;
+            }
+
+            if (rowIndex > LimitPerSheet )
+            {
+                workSheet = PrepareNewSheet(Workbook, workSheet);
                 rowIndex = 2;
             }
 
             rowSheet = workSheet.Row(rowIndex);
-            foreach (string value in row.Values)
+            foreach (object value in row.Values)
             {
                 rowSheet.Cell(cellIndex).Value = value;
                 cellIndex++;
@@ -3070,68 +2994,35 @@ namespace Helpy
         ///<summary>Add data to an excel file</summary>
         /// <param name="rows">Data to add to the new excel file as a list of dictionaries where each dictionary represents a row</param>
         /// <param name="sheetName">Name of the sheet to get the data, if null it will use the first sheet</param>
-        public void Append(IEnumerable<IDictionary<string, string>> rows, string sheetName = null)
+        public void Append(IEnumerable<IDictionary<string, object>> rows, string sheetName = null)
         {
+            int iterations = 0;
+            int amountOfItems = rows.Count();
+            int amountOfItemsToSkip = LimitPerSheet * iterations;
             IXLWorksheet workSheet = sheetName == null ? Workbook.Worksheets.First() : Workbook.Worksheets.Worksheet(sheetName);
-            IXLRow lastRow = workSheet.LastRowUsed();
+
+            IXLRow firstRow = workSheet.FirstRowUsed(XLCellsUsedOptions.Contents);
+            IXLRow lastRow = workSheet.LastRowUsed(XLCellsUsedOptions.Contents);
+            
             int rowIndex = lastRow == null ? 1 : lastRow.RowNumber() + 1;
-            string currentSheetName = workSheet.Name;
 
-            if (rowIndex > LimitPerSheet + 1)
+            if (firstRow == null && amountOfItems > 0)
             {
-                workSheet = PrepareNewSheet(Workbook, workSheet, currentSheetName);
-                rowIndex = 2;
-            }
-
-            foreach (IDictionary<string, string> row in rows)
-            {
-                int cellIndex = 1;
-                foreach (string value in row.Values)
-                {
-                    workSheet.Row(rowIndex).Cell(cellIndex).Value = value;
-                    cellIndex++;
-                }
-
+                SetHeaders(rows.First().Keys);
                 rowIndex++;
-                if (rowIndex > LimitPerSheet + 1)
-                {
-                    workSheet = PrepareNewSheet(Workbook, workSheet, currentSheetName);
-                    rowIndex = 2;
-                }
-            }
-        }
-
-        ///<summary>Add data to an excel file</summary>
-        /// <param name="table">Data to add to the new excel file as a datatable</param>
-        /// <param name="sheetName">Name of the sheet to get the data, if null it will use the first sheet</param>
-        public void Append(System.Data.DataTable table, string sheetName = null)
-        {
-            IXLWorksheet workSheet = sheetName == null ? Workbook.Worksheets.First() : Workbook.Worksheets.Worksheet(sheetName);
-            IXLRow lastRow = workSheet.LastRowUsed();
-            int rowIndex = lastRow == null ? 1 : lastRow.RowNumber() + 1;
-            string currentSheetName = workSheet.Name;
-
-            if (rowIndex > LimitPerSheet + 1)
-            {
-                workSheet = PrepareNewSheet(Workbook, workSheet, currentSheetName);
-                rowIndex = 2;
             }
 
-            foreach (System.Data.DataRow row in table.Rows)
+            while (amountOfItemsToSkip < amountOfItems)
             {
-                int cellIndex = 1;
-                foreach (object value in row.ItemArray)
-                {
-                    workSheet.Row(rowIndex).Cell(cellIndex).Value = value;
-                    cellIndex++;
-                }
+                workSheet.Cell(rowIndex, 1).InsertData(rows.Skip(amountOfItemsToSkip).Take(LimitPerSheet).Select(r => r.Values.ToArray()));
 
-                rowIndex++;
-                if (rowIndex > LimitPerSheet + 1)
-                {
-                    workSheet = PrepareNewSheet(Workbook, workSheet, currentSheetName);
-                    rowIndex = 2;
-                }
+                iterations++;
+                amountOfItemsToSkip = LimitPerSheet * iterations;
+
+                if (amountOfItemsToSkip >= amountOfItems)
+                    break;
+
+                workSheet = PrepareNewSheet(Workbook, workSheet);
             }
         }
 
@@ -3142,46 +3033,42 @@ namespace Helpy
         public bool HasHeader(string header, string sheetName = null, bool exactMatch = true)
         {
             IXLWorksheet workSheet = string.IsNullOrWhiteSpace(sheetName) ? Workbook.Worksheet(1) : Workbook.Worksheet(sheetName);
-            IXLRow headers = workSheet.FirstRow();
-            IEnumerable<string> cells = headers.Cells().Select(c => c.GetString());
+            IXLRow firstRow = workSheet.FirstRowUsed(XLCellsUsedOptions.Contents);
+            IEnumerable<string> cells = null;
+            string headerCopy = exactMatch ? header : header.ToLower();
 
+            if (firstRow == null)
+                return false;
+
+            cells = firstRow.CellsUsed(XLCellsUsedOptions.Contents).Select(c => c.GetString());
             if (cells.Count() == 0)
                 return false;
 
-            if (exactMatch)
-                return cells.FirstOrDefault(c => c == header) != null;
-            else
-                return cells.FirstOrDefault(c => c.ToLower() == header.ToLower()) != null;
+            return exactMatch ? cells.Any(c => c == headerCopy) : cells.Any(c => c.ToLower() == headerCopy);
         }
 
         ///<summary>Add data to an excel file</summary>
         /// <param name="header">List of headers to validate in the excel file</param>
         /// <param name="sheetName">Name of the sheet to get the data, if null it will use the first sheet</param>
         /// <param name="exactMatch">If is true it will validate the string without case sensitive</param>
-        public bool HasHeader(IList<string> headers, string sheetName = null, bool exactMatch = true)
+        public bool HasHeader(IEnumerable<string> headers, string sheetName = null, bool exactMatch = true)
         {
             IXLWorksheet workSheet = string.IsNullOrWhiteSpace(sheetName) ? Workbook.Worksheet(1) : Workbook.Worksheet(sheetName);
-            IXLRow firstRow = workSheet.FirstRow();
-            IEnumerable<string> cells = firstRow.Cells().Select(c => c.GetString());
-            IEnumerable<string> currentHeaders = null;
+            IXLRow firstRow = workSheet.FirstRowUsed(XLCellsUsedOptions.Contents);
+            IEnumerable<string> cells = null;
 
+            if (firstRow == null)
+                return false;
+
+            cells = exactMatch ? firstRow.CellsUsed(XLCellsUsedOptions.Contents).Select(c => c.GetString()) : firstRow.CellsUsed(XLCellsUsedOptions.Contents).Select(c => c.GetString().ToLower());
             if (cells.Count() == 0)
                 return false;
 
-            if (!exactMatch)
+            foreach (string header in (exactMatch ? headers : headers.Select(h => h.ToLower())))
             {
-                currentHeaders = firstRow.Cells().Select(c => c.GetString().ToLower());
-                for (int i = 0; i < headers.Count(); i++)
-                {
-                    headers[i] = headers[i].ToLower();
-                }
-            }
-            else
-                currentHeaders = firstRow.Cells().Select(c => c.GetString());
-
-            foreach (string header in headers)
-                if (!currentHeaders.Contains(header))
+                if (!cells.Contains(header))
                     return false;
+            }
 
             return true;
         }
@@ -3193,30 +3080,22 @@ namespace Helpy
         public bool HasHeaderFromObject<T>(T obj, string sheetName = null, bool exactMatch = true) where T : class
         {
             IXLWorksheet workSheet = string.IsNullOrWhiteSpace(sheetName) ? Workbook.Worksheet(1) : Workbook.Worksheet(sheetName);
-            IXLRow firstRow = workSheet.FirstRow();
-            IEnumerable<string> cells = firstRow.Cells().Select(c => c.GetString());
-            IEnumerable<string> currentHeaders = null;
-            IList<string> headers = obj.GetType().GetProperties()
-                                    .Where(p => IsValidPropertyType(p.PropertyType))
-                                    .Select(p => p.Name).ToList();
+            IXLRow firstRow = workSheet.FirstRowUsed(XLCellsUsedOptions.Contents);
+            IEnumerable<string> cells = null;
+            IEnumerable<string> headers = obj.GetType().GetProperties().Where(p => IsValidPropertyType(p.PropertyType)).Select(p => p.Name);
 
+            if (firstRow == null)
+                return false;
+
+            cells = exactMatch ? firstRow.CellsUsed(XLCellsUsedOptions.Contents).Select(c => c.GetString()) : firstRow.CellsUsed().Select(c => c.GetString().ToLower());
             if (cells.Count() == 0)
                 return false;
 
-            if (!exactMatch)
+            foreach (string header in (exactMatch ? headers : headers.Select(h => h.ToLower())))
             {
-                currentHeaders = firstRow.Cells().Select(c => c.Value.ToString().ToLower());
-                for (int i = 0; i < headers.Count(); i++)
-                {
-                    headers[i] = headers[i].ToLower();
-                }
-            }
-            else
-                currentHeaders = firstRow.Cells().Select(c => c.Value.ToString());
-
-            foreach (string header in headers)
-                if (!currentHeaders.Contains(header))
+                if (!cells.Contains(header))
                     return false;
+            }
 
             return true;
         }
@@ -3226,10 +3105,10 @@ namespace Helpy
         public void Reset(string sheetName = null)
         {
             IXLWorksheet workSheet = string.IsNullOrWhiteSpace(sheetName) ? Workbook.Worksheet(1) : Workbook.Worksheet(sheetName);
-            IEnumerable<IXLRow> rows = workSheet.Rows().Skip(1);
+            IEnumerable<string> headers = GetHeaders(workSheet);
 
-            foreach (IXLRow row in rows)
-                row.Delete();
+            workSheet.Clear(XLClearOptions.AllContents);
+            SetHeaders(headers,workSheet);
         }
 
         ///<summary>Clear all rows of a sheet incliding header</summary>
@@ -3237,10 +3116,7 @@ namespace Helpy
         public void Clear(string sheetName = null)
         {
             IXLWorksheet workSheet = string.IsNullOrWhiteSpace(sheetName) ? Workbook.Worksheet(1) : Workbook.Worksheet(sheetName);
-            IXLRows rows = workSheet.Rows();
-
-            foreach (IXLRow row in rows)
-                row.Delete();
+            workSheet.Clear(XLClearOptions.AllContents);
         }
 
         ///<summary>Writes data to an excel file</summary>
@@ -3249,32 +3125,28 @@ namespace Helpy
         /// <param name="sheetName">Name of the sheet to get the data, if null it will use the first sheet</param>
         public static void Write(string path, IEnumerable<IEnumerable<string>> rows, string sheetName = null)
         {
-            ValidateFile(path);
+            int iterations = 0;
+            int amountOfItems = rows.Count();
+            int amountOfItemsToSkip = DefaultLimit * iterations;
+            XLWorkbook currentWorkBook = new XLWorkbook(path);
 
-            XLWorkbook CurrentWorkBook = new XLWorkbook(path);
-            IXLWorksheet workSheet = sheetName == null ? CurrentWorkBook.Worksheet(1) : CurrentWorkBook.Worksheet(sheetName);
-            IXLRow lastRow = workSheet.LastRowUsed();
-            int rowIndex = lastRow == null ? 1 : lastRow.RowNumber() + 1;
-            string currentSheetName = workSheet.Name;
+            IXLWorksheet workSheet = sheetName == null ? currentWorkBook.Worksheet(1): currentWorkBook.Worksheet(sheetName);
+            IXLRow lastRow = workSheet.LastRowUsed(XLCellsUsedOptions.Contents);
+            int rowIndex = (lastRow == null) ? 1 : lastRow.RowNumber() + 1;
 
-            foreach (IEnumerable<string> row in rows)
+            while (amountOfItemsToSkip < amountOfItems)
             {
-                IXLRow rowSheet = workSheet.Row(rowIndex);
-                int cellIndex = 1;
-                foreach (string value in row)
-                {
-                    rowSheet.Cell(cellIndex).Value = value;
-                    cellIndex += 1;
-                }
-                rowIndex += 1;
+                workSheet.Cell(rowIndex, 1).InsertData(rows.Skip(amountOfItemsToSkip).Take(DefaultLimit));
+                iterations++;
+                amountOfItemsToSkip = DefaultLimit * iterations;
 
-                if (rowIndex > DefaultLimit + 1)
-                {
-                    workSheet = PrepareNewSheet(CurrentWorkBook, workSheet, currentSheetName);
-                    rowIndex = 2;
-                }
+                if (amountOfItemsToSkip >= amountOfItems)
+                    break;
+
+                workSheet = PrepareNewSheet(currentWorkBook, workSheet);
             }
-            CurrentWorkBook.Save();
+
+            Save(currentWorkBook,path);
         }
 
         /// <summary>Writes data to an excel file</summary>
@@ -3285,34 +3157,27 @@ namespace Helpy
         {
             ValidateFile(path);
 
-            XLWorkbook CurrentWorkBook = new XLWorkbook(path);
-            IXLWorksheet workSheet = sheetName == null ? CurrentWorkBook.Worksheet(1) : CurrentWorkBook.Worksheet(sheetName);
-            IXLRow lastRow = workSheet.LastRowUsed();
-            int rowIndex = lastRow == null ? 1 : lastRow.RowNumber() + 1;
-            string currentSheetName = workSheet.Name;
+            XLWorkbook currentWorkBook = new XLWorkbook(path);
+            int iterations = 0;
+            int amountOfItems = rows.Count();
+            int amountOfItemsToSkip = DefaultLimit * iterations;
+            IXLWorksheet workSheet = sheetName == null ? currentWorkBook.Worksheet(1) : currentWorkBook.Worksheets.Worksheet(sheetName);
+            IXLRow lastRow = workSheet.LastRowUsed(XLCellsUsedOptions.Contents);
+            int rowIndex = (lastRow == null) ? 1 : lastRow.RowNumber() + 1;
 
-            foreach (T row in rows)
+            while (amountOfItemsToSkip < amountOfItems)
             {
-                int cellIndex = 1;
-                IXLRow rowSheet = workSheet.Row(rowIndex);
+                workSheet.Cell(rowIndex, 1).InsertData(rows.Skip(amountOfItemsToSkip).Take(DefaultLimit));
 
-                foreach (PropertyInfo prop in row.GetType().GetProperties())
-                {
-                    if (IsValidPropertyType(prop.PropertyType))
-                    {
-                        rowSheet.Cell(cellIndex).Value = prop.GetValue(row, null);
-                        cellIndex += 1;
-                    }
-                }
-                rowIndex += 1;
+                iterations++;
+                amountOfItemsToSkip = DefaultLimit * iterations;
 
-                if (rowIndex > DefaultLimit + 1)
-                {
-                    workSheet = PrepareNewSheet(CurrentWorkBook, workSheet, currentSheetName);
-                    rowIndex = 2;
-                }
+                if (amountOfItemsToSkip >= amountOfItems)
+                    break;
+
+                workSheet = PrepareNewSheet(currentWorkBook, workSheet);
             }
-            CurrentWorkBook.Save();
+            Save(currentWorkBook, path);
         }
 
         /// <summary>Writes data to an excel file</summary>
@@ -3323,122 +3188,97 @@ namespace Helpy
         {
             ValidateFile(path);
 
-            XLWorkbook CurrentWorkBook = new XLWorkbook(path, XLEventTracking.Disabled);
-            IXLWorksheet workSheet = sheetName == null ? CurrentWorkBook.Worksheet(1) : CurrentWorkBook.Worksheet(sheetName);
-            IXLRow lastRow = workSheet.LastRowUsed();
+            XLWorkbook currentWorkBook = new XLWorkbook(path, XLEventTracking.Disabled);
+            int iterations = 0;
+            int amountOfItems = rows.Count();
+            int amountOfItemsToSkip = DefaultLimit * iterations;
+            IXLWorksheet workSheet = sheetName == null ? currentWorkBook.Worksheet(1) : currentWorkBook.Worksheets.Worksheet(sheetName);
+
+            IXLRow firstRow = workSheet.FirstRowUsed(XLCellsUsedOptions.Contents);
+            IXLRow lastRow = workSheet.LastRowUsed(XLCellsUsedOptions.Contents);
+
             int rowIndex = lastRow == null ? 1 : lastRow.RowNumber() + 1;
-            string currentSheetName = workSheet.Name;
 
-            foreach (IDictionary<string, string> row in rows)
+            if (firstRow == null && amountOfItems > 0)
             {
-                int cellIndex = 1;
-                IXLRow rowSheet = workSheet.Row(rowIndex);
-
-                foreach (string value in row.Values)
-                {
-                    rowSheet.Cell(cellIndex).Value = value;
-                    cellIndex += 1;
-                }
-                rowIndex += 1;
-
-                if (rowIndex > DefaultLimit + 1)
-                {
-                    workSheet = PrepareNewSheet(CurrentWorkBook, workSheet, currentSheetName);
-                    rowIndex = 2;
-                }
+                SetHeaders(currentWorkBook, rows.First().Keys);
+                rowIndex++;
             }
-            CurrentWorkBook.Save();
-        }
 
-        /// <summary>Writes data to an excel file</summary>
-        /// <param name="path">Filepath of the new excel file</param>
-        /// <param name="table">Data to add to the new excel file as a datatable</param>
-        /// <param name="sheetName">Name of the sheet to get the data, if null it will use the first sheet</param>
-        public static void Write(string path, System.Data.DataTable table, string sheetName = null)
-        {
-            ValidateFile(path);
-
-            XLWorkbook CurrentWorkBook = new XLWorkbook(path, XLEventTracking.Disabled);
-            IXLWorksheet workSheet = sheetName == null ? CurrentWorkBook.Worksheet(1) : CurrentWorkBook.Worksheet(sheetName);
-            IXLRow lastRow = workSheet.LastRowUsed();
-            int rowIndex = lastRow == null ? 1 : lastRow.RowNumber() + 1;
-            string currentSheetName = workSheet.Name;
-
-            foreach (System.Data.DataRow row in table.Rows)
+            while (amountOfItemsToSkip < amountOfItems)
             {
-                int cellIndex = 1;
-                IXLRow rowSheet = workSheet.Row(rowIndex);
+                workSheet.Cell(rowIndex, 1).InsertData(rows.Skip(amountOfItemsToSkip).Take(DefaultLimit).Select(r => r.Values.ToArray()));
 
-                foreach (object value in row.ItemArray)
-                {
-                    rowSheet.Cell(cellIndex).Value = value;
-                    cellIndex += 1;
-                }
-                rowIndex += 1;
+                iterations++;
+                amountOfItemsToSkip = DefaultLimit * iterations;
 
-                if (rowIndex > DefaultLimit + 1)
-                {
-                    workSheet = PrepareNewSheet(CurrentWorkBook, workSheet, currentSheetName);
-                    rowIndex = 2;
-                }
+                if (amountOfItemsToSkip >= amountOfItems)
+                    break;
+
+                workSheet = PrepareNewSheet(currentWorkBook, workSheet);
             }
-            CurrentWorkBook.Save();
+            Save(currentWorkBook, path);
         }
 
         /// <summary>Split an excel file sheet into multiple files by an specified quantity</summary>
         /// <param name="path">Filepath of the new excel file</param>
         /// <param name="newFilesfolderPath">Folder to use to store the generated files</param>
-        /// <param name="quantity">Amount of files to create</param>
+        /// <param name="filesQuantity">Amount of files to create</param>
         /// <param name="sheetName">Name of the sheet to get the data, if null it will use the first sheet</param>
         /// <param name="customHeaders">Titles to use for each file created</param>
         /// <param name="template_name">Name to use for all the files, ej: if Book then files will be Book1, Book2 etc..</param>
-        /// <param name="countEmptyRows">If is true, it will brings empty rows that where use in the file</param>
-        public static bool SplitByFiles(string path, string newFilesfolderPath, int quantity, string sheetName = null, IEnumerable<string> customHeaders = null, string template_name = null, bool countEmptyRows = false)
+        public static void SplitByFiles(string path, string newFilesfolderPath, int filesQuantity, string sheetName = null, IEnumerable<string> customHeaders = null, string template_name = null)
         {
             ValidateFile(path);
             ValidateFolder(newFilesfolderPath);
 
-            string[] filename = string.IsNullOrEmpty(template_name) ? DefaultFileName.Split('.') : template_name.Split('.');
-            string name = filename[0];
-            string extention = filename.Length > 1 ? "." + filename[1] : ".xlsx";
+            XLWorkbook CurrentWorkBook = new XLWorkbook(path, XLEventTracking.Disabled);
+            string filename = string.IsNullOrEmpty(template_name) ? Path.GetFileNameWithoutExtension(DefaultFileName) : Path.GetFileNameWithoutExtension(template_name);
+            string extension = string.IsNullOrEmpty(template_name) ? Path.GetExtension(DefaultFileName) : Path.GetExtension(template_name);
 
-            XLWorkbook CurrentWorkBook = new XLWorkbook(path);
+            if(!IsValidExtension(extension))
+                throw new Exception(string.Format("The extension {0} is not valid, valid extensions:{1}",extension,string.Join(",",SupportedExtensions)));
+
             IXLWorksheet workSheet = sheetName == null ? CurrentWorkBook.Worksheet(1) : CurrentWorkBook.Worksheet(sheetName);
-            IXLRows rows = countEmptyRows ? workSheet.Rows() : workSheet.RowsUsed();
-            IList<string> headers = (customHeaders == null ? rows.First().Cells().Select(c => c.GetString()) : customHeaders).ToList();
+            IEnumerable<IXLRow> rows = workSheet.RowsUsed(XLCellsUsedOptions.Contents, r => r.RowNumber() > 1);
+            IList<string> headers = (customHeaders == null ? workSheet.FirstRowUsed(XLCellsUsedOptions.Contents).CellsUsed(XLCellsUsedOptions.Contents).Select(c => c.GetString()) : customHeaders).ToList();
 
-            int rows_quantity = rows.Count() / quantity;
-            int remainder = rows.Count() % quantity;
-            int adittional = remainder > 0 ? Convert.ToInt32(Math.Ceiling((double)remainder / quantity)) : 0;
-            int totalRows = rows_quantity + adittional;
+            int fileRowsNumber = workSheet.LastRowUsed(XLCellsUsedOptions.Contents).RowNumber() - 1;
+            int remainderRow = fileRowsNumber % filesQuantity;
+            int adittionalRowsPerSheet = remainderRow > 0 ? Convert.ToInt32(Math.Ceiling((double)remainderRow / filesQuantity)) : 0;
+            int totalRows = (fileRowsNumber / filesQuantity) + adittionalRowsPerSheet;
+            
             int filesIndexName = 1;
+            int iterations = 0;
 
-            int rowIndex = 0;
-            XLWorkbook newWorbook = new XLWorkbook();
+            XLWorkbook newWorbook = new XLWorkbook(XLEventTracking.Disabled);
             IXLWorksheet newWorksheet = newWorbook.Worksheets.Add(DefaultSheetName);
-            AssingValuesToRow(newWorksheet.Row(1), headers);
-            string fullName = Path.Combine(newFilesfolderPath, name + filesIndexName.ToString() + extention);
+            string fullFileName = Path.Combine(newFilesfolderPath, filename + filesIndexName.ToString() + extension);
 
-            foreach (IXLRow row in rows.Skip(customHeaders == null ? 1 : 0))
+            SetHeaders(newWorbook, headers, newWorksheet.Name);
+
+            while (iterations < filesQuantity)
             {
+                IEnumerable<IXLRow> currentRows = rows.Skip((totalRows * iterations)).Take(totalRows);
+                ICollection<object []> currentCells = new List<object []>();
 
-                AssingValuesToRow(newWorksheet.Row(rowIndex + 2), row.Cells());
-                rowIndex += 1;
-
-                if (rowIndex == totalRows)
+                foreach (IXLRow item in currentRows)
                 {
-                    newWorbook.SaveAs(fullName);
-                    newWorbook = new XLWorkbook();
-                    newWorksheet = newWorbook.Worksheets.Add(DefaultSheetName);
-                    AssingValuesToRow(newWorksheet.Row(1), headers);
-                    filesIndexName += 1;
-                    rowIndex = 0;
-                    fullName = Path.Combine(newFilesfolderPath, name + filesIndexName.ToString() + extention);
+                    currentCells.Add(item.CellsUsed(XLCellsUsedOptions.Contents).Select(c => c.Value).ToArray());
                 }
-            }
 
-            newWorbook.SaveAs(fullName);
-            return Directory.GetFiles(newFilesfolderPath).Length == filesIndexName;
+                newWorksheet.Cell(2, 1).InsertData(currentCells);
+                
+                Save(newWorbook, fullFileName);
+                newWorbook = new XLWorkbook(XLEventTracking.Disabled);
+                newWorksheet = newWorbook.Worksheets.Add(DefaultSheetName);
+                SetHeaders(newWorbook, headers, newWorksheet.Name);
+                
+                filesIndexName++;
+                iterations++;
+
+                fullFileName = Path.Combine(newFilesfolderPath, filename + filesIndexName.ToString() + extension);
+            }
         }
 
         /// <summary>Split an excel file sheet into multiple files by an specified amount of rows</summary>
@@ -3448,152 +3288,57 @@ namespace Helpy
         /// <param name="sheetName">Name of the sheet to get the data, if null it will use the first sheet</param>
         /// <param name="customHeaders">Titles to use for each file created</param>
         /// <param name="template_name">Name to use for all the files, ej: if Book then files will be Book1, Book2 etc..</param>
-        /// <param name="countEmptyRows">If is true, it will brings empty rows that where use in the file</param>
-        public static bool SplitByRows(string path, string newFilesfolderPath, int rowsQuantity, string sheetName = null, IEnumerable<string> customHeaders = null, string template_name = null, bool countEmptyRows = false)
+        public static void SplitByRows(string path, string newFilesfolderPath, int rowsQuantity, string sheetName = null, IEnumerable<string> customHeaders = null, string template_name = null)
         {
             ValidateFile(path);
             ValidateFolder(newFilesfolderPath);
 
-            string[] filename = string.IsNullOrEmpty(template_name) ? DefaultFileName.Split('.') : template_name.Split('.');
-            string name = filename[0];
-            string extention = filename.Length > 1 ? "." + filename[1] : ".xlsx";
+            XLWorkbook CurrentWorkBook = new XLWorkbook(path, XLEventTracking.Disabled);
+            string filename = string.IsNullOrEmpty(template_name) ? Path.GetFileNameWithoutExtension(DefaultFileName) : Path.GetFileNameWithoutExtension(template_name);
+            string extension = string.IsNullOrEmpty(template_name) ? Path.GetExtension(DefaultFileName) : Path.GetExtension(template_name);
 
-            XLWorkbook CurrentWorkBook = new XLWorkbook(path);
+            if (!IsValidExtension(extension))
+                throw new Exception(string.Format("The extension {0} is not valid, valid extensions:{1}", extension, string.Join(",", SupportedExtensions)));
+
             IXLWorksheet workSheet = sheetName == null ? CurrentWorkBook.Worksheet(1) : CurrentWorkBook.Worksheet(sheetName);
-            IXLRows rows = countEmptyRows ? workSheet.Rows() : workSheet.RowsUsed();
-            IList<string> headers = (customHeaders == null ? rows.First().Cells().Select(c => c.GetString()) : customHeaders).ToList();
+            IEnumerable<IXLRow> rows = workSheet.RowsUsed(XLCellsUsedOptions.Contents, r => r.RowNumber() > 1);
+            IList<string> headers = (customHeaders == null ? workSheet.FirstRowUsed(XLCellsUsedOptions.Contents).CellsUsed(XLCellsUsedOptions.Contents).Select(c => c.GetString()) : customHeaders).ToList();
 
+            int fileRowsNumber = workSheet.LastRowUsed(XLCellsUsedOptions.Contents).RowNumber() - 1;
+            int remainderRow = fileRowsNumber % rowsQuantity;
+            int adittionalRowsPerSheet = remainderRow > 0 ? Convert.ToInt32(Math.Ceiling((double)remainderRow / fileRowsNumber)) : 0;
+            int filesQuantity = (fileRowsNumber / rowsQuantity) + adittionalRowsPerSheet;
+            int iterations = 0;
             int filesIndexName = 1;
 
-            int rowIndex = 0;
-            XLWorkbook newWorbook = new XLWorkbook();
+            XLWorkbook newWorbook = new XLWorkbook(XLEventTracking.Disabled);
             IXLWorksheet newWorksheet = newWorbook.Worksheets.Add(DefaultSheetName);
-            AssingValuesToRow(newWorksheet.Row(1), headers);
-            string fullName = Path.Combine(newFilesfolderPath, name + filesIndexName.ToString() + extention);
+            string fullFileName = Path.Combine(newFilesfolderPath, filename + filesIndexName.ToString() + extension);
 
-            foreach (IXLRow row in rows.Skip(customHeaders == null ? 1 : 0))
+            SetHeaders(newWorbook, headers, newWorksheet.Name);
+
+            while (iterations < filesQuantity)
             {
+                IEnumerable<IXLRow> currentRows = rows.Skip((rowsQuantity * iterations)).Take(rowsQuantity);
+                ICollection<object[]> currentCells = new List<object[]>();
 
-                AssingValuesToRow(newWorksheet.Row(rowIndex + 2), row.Cells());
-                rowIndex += 1;
-
-                if (rowIndex == rowsQuantity - 1)
+                foreach (IXLRow item in currentRows)
                 {
-                    newWorbook.SaveAs(fullName);
-                    newWorbook = new XLWorkbook();
-                    newWorksheet = newWorbook.Worksheets.Add(DefaultSheetName);
-                    AssingValuesToRow(newWorksheet.Row(1), headers);
-                    filesIndexName += 1;
-                    rowIndex = 0;
-                    fullName = Path.Combine(newFilesfolderPath, name + filesIndexName.ToString() + extention);
+                    currentCells.Add(item.CellsUsed(XLCellsUsedOptions.Contents).Select(c => c.Value).ToArray());
                 }
+
+                newWorksheet.Cell(2, 1).InsertData(currentCells);
+
+                Save(newWorbook, fullFileName);
+                newWorbook = new XLWorkbook(XLEventTracking.Disabled);
+                newWorksheet = newWorbook.Worksheets.Add(DefaultSheetName);
+                SetHeaders(newWorbook, headers, newWorksheet.Name);
+
+                filesIndexName++;
+                iterations++;
+
+                fullFileName = Path.Combine(newFilesfolderPath, filename + filesIndexName.ToString() + extension);
             }
-
-            newWorbook.SaveAs(fullName);
-            return Directory.GetFiles(newFilesfolderPath).Length == filesIndexName;
-        }
-
-        /// <summary>Split an excel file sheet into multiple files by an specified amount of rows</summary>
-        /// <param name="newFilesfolderPath">Folder to use to store the generated files</param>
-        /// <param name="quantity">Amount of files to create</param>
-        /// <param name="sheetName">Name of the sheet to get the data, if null it will use the first sheet</param>
-        /// <param name="customHeaders">Titles to use for each file created</param>
-        /// <param name="template_name">Name to use for all the files, ej: if Book then files will be Book1, Book2 etc..</param>
-        /// <param name="countEmptyRows">If is true, it will brings empty rows that where use in the file</param>
-        public bool SplitFile(string newFilesfolderPath, int quantity, string sheetName = null, IEnumerable<string> customHeaders = null, string template_name = null, bool countEmptyRows = false)
-        {
-
-            ValidateFolder(newFilesfolderPath);
-
-            string[] filename = string.IsNullOrEmpty(template_name) ? DefaultFileName.Split('.') : template_name.Split('.');
-            string name = filename[0];
-            string extention = filename.Length > 1 ? "." + filename[1] : ".xlsx";
-
-            IXLWorksheet workSheet = sheetName == null ? Workbook.Worksheet(1) : Workbook.Worksheet(sheetName);
-
-            IXLRows rows = countEmptyRows ? workSheet.Rows() : workSheet.RowsUsed();
-            IList<string> headers = (customHeaders == null ? workSheet.FirstRow().Cells().Select(c => c.GetString()) : customHeaders).ToList();
-
-            int rows_quantity = rows.Count() / quantity;
-            int remainder = rows.Count() % quantity;
-            int adittional = remainder > 0 ? Convert.ToInt32(Math.Ceiling((double)remainder / quantity)) : 0;
-            int totalRows = rows_quantity + adittional;
-            int filesIndexName = 1;
-
-            int rowIndex = 0;
-            XLWorkbook newWorbook = new XLWorkbook();
-            IXLWorksheet newWorksheet = newWorbook.Worksheets.Add(DefaultSheetName);
-            AssingValuesToRow(newWorksheet.Row(1), headers);
-            string fullName = Path.Combine(newFilesfolderPath, name + filesIndexName.ToString() + extention);
-
-            foreach (IXLRow row in rows.Skip(customHeaders == null ? 1 : 0))
-            {
-
-                AssingValuesToRow(newWorksheet.Row(rowIndex + 2), row.Cells());
-                rowIndex += 1;
-
-                if (rowIndex == totalRows)
-                {
-                    newWorbook.SaveAs(fullName);
-                    newWorbook = new XLWorkbook();
-                    newWorksheet = newWorbook.Worksheets.Add(DefaultSheetName);
-                    AssingValuesToRow(newWorksheet.Row(1), headers);
-                    filesIndexName += 1;
-                    rowIndex = 0;
-                    fullName = Path.Combine(newFilesfolderPath, name + filesIndexName.ToString() + extention);
-                }
-            }
-
-            newWorbook.SaveAs(fullName);
-            return Directory.GetFiles(newFilesfolderPath).Length == filesIndexName;
-        }
-
-        /// <summary>Split an excel file sheet into multiple files by an specified amount of rows</summary>
-        /// <param name="newFilesfolderPath">Folder to use to store the generated files</param>
-        /// <param name="rowsQuantity">Amount of rows per file </param>
-        /// <param name="sheetName">Name of the sheet to get the data, if null it will use the first sheet</param>
-        /// <param name="customHeaders">Titles to use for each file created</param>
-        /// <param name="template_name">Name to use for all the files, ej: if Book then files will be Book1, Book2 etc..</param>
-        /// <param name="countEmptyRows">If is true, it will brings empty rows that where use in the file</param>
-        public bool SplitRows(string newFilesfolderPath, int rowsQuantity, string sheetName = null, IEnumerable<string> customHeaders = null, string template_name = null, bool countEmptyRows = false)
-        {
-
-            ValidateFolder(newFilesfolderPath);
-
-            string[] filename = string.IsNullOrEmpty(template_name) ? DefaultFileName.Split('.') : template_name.Split('.');
-            string name = filename[0];
-            string extention = filename.Length > 1 ? "." + filename[1] : ".xlsx";
-
-            IXLWorksheet workSheet = sheetName == null ? Workbook.Worksheet(1) : Workbook.Worksheet(sheetName);
-            IXLRows rows = countEmptyRows ? workSheet.Rows() : workSheet.RowsUsed();
-            IList<string> headers = (customHeaders == null ? rows.First().Cells().Select(c => c.GetString()) : customHeaders).ToList();
-
-            int filesIndexName = 1;
-
-            int rowIndex = 0;
-            XLWorkbook newWorbook = new XLWorkbook();
-            IXLWorksheet newWorksheet = newWorbook.Worksheets.Add(DefaultSheetName);
-            AssingValuesToRow(newWorksheet.Row(1), headers);
-            string fullName = Path.Combine(newFilesfolderPath, name + filesIndexName.ToString() + extention);
-
-            foreach (IXLRow row in rows.Skip(customHeaders == null ? 1 : 0))
-            {
-                AssingValuesToRow(newWorksheet.Row(rowIndex + 2), row.Cells());
-                rowIndex += 1;
-
-                if (rowIndex == rowsQuantity)
-                {
-                    newWorbook.SaveAs(fullName);
-                    newWorbook = new XLWorkbook();
-                    newWorksheet = newWorbook.Worksheets.Add(DefaultSheetName);
-                    AssingValuesToRow(newWorksheet.Row(1), headers);
-                    filesIndexName += 1;
-                    rowIndex = 0;
-                    fullName = Path.Combine(newFilesfolderPath, name + filesIndexName.ToString() + extention);
-                }
-            }
-            newWorbook.SaveAs(fullName);
-            return Directory.GetFiles(newFilesfolderPath).Length == filesIndexName;
         }
 
         /// <summary>Join an amount of excel files into one, if excel sheet is full then create a new one an continue joining</summary>
@@ -3601,103 +3346,43 @@ namespace Helpy
         /// <param name="newFilePath">Path of the new Excel file incliding the name</param>
         /// <param name="sheetName">Name for the new file sheet</param>
         /// <param name="filesSheetNameToUse">If files have the same sheetName then it will look for it, if not let this param null to take the first one of each</param>
-        /// <param name="customHeaders">Titles to use in the new Excel file</param>
-        /// <param name="countEmptyRows">If is true, it will brings empty rows that where use in the file</param>
-        public static void Join(string filesFolderPath, string newFilePath, string sheetName = null, string filesSheetNameToUse = null, IEnumerable<string> customHeaders = null, bool countEmptyRows = false)
+        /// <param name="customHeaders">Titles to use in the new Excel file. If is null it will use the first found file headers</param>
+        public static void Join(string filesFolderPath, string newFilePath, string sheetName = null, string filesSheetNameToUse = null, IEnumerable<string> customHeaders = null)
         {
             ValidateFolder(filesFolderPath);
 
-            XLWorkbook newWorkBook = new XLWorkbook();
+            XLWorkbook newWorkBook = new XLWorkbook(XLEventTracking.Disabled);
             IXLWorksheet workSheet = sheetName == null ? newWorkBook.Worksheets.Add(DefaultSheetName) : newWorkBook.Worksheets.Add(sheetName);
             string currentSheetName = workSheet.Name;
-            int rowIndex = 1;
             bool hasHeader = false;
 
             foreach (string filePath in Directory.GetFiles(filesFolderPath))
             {
-                if (!IsValidExtension(filePath))
+                if (!IsValidExtension(Path.GetExtension(filePath)))
                     continue;
 
-                XLWorkbook fileWorkbook = new XLWorkbook(filePath);
+                XLWorkbook fileWorkbook = new XLWorkbook(filePath,XLEventTracking.Disabled);
                 IXLWorksheet fileWorkSheet = filesSheetNameToUse == null ? fileWorkbook.Worksheet(1) : fileWorkbook.Worksheet(filesSheetNameToUse);
-                IXLRows rows = countEmptyRows ? fileWorkSheet.Rows() : fileWorkSheet.RowsUsed();
+                IXLRows rows = fileWorkSheet.RowsUsed(XLCellsUsedOptions.Contents, r => r.RowNumber() > 1);
 
-                if (!hasHeader && customHeaders != null)
+                if (!hasHeader)
                 {
-                    rowIndex += AddHeaders(workSheet, customHeaders);
+                    SetHeaders(newWorkBook, customHeaders ?? fileWorkSheet.FirstRowUsed(XLCellsUsedOptions.Contents).CellsUsed(XLCellsUsedOptions.Contents).Select(c => c.GetString()));
                     hasHeader = true;
                 }
 
-                foreach (IXLRow row in rows.Skip(hasHeader ? 1 : 0))
+                ICollection<object[]> currentCells = new List<object[]>();
+                foreach (IXLRow item in rows)
                 {
-                    int cellIndex = 1;
-                    if (rowIndex > DefaultLimit)
-                    {
-                        workSheet = PrepareNewSheet(newWorkBook, workSheet, currentSheetName);
-                        rowIndex = AddHeaders(workSheet, customHeaders);
-                    }
-
-                    foreach (IXLCell cell in row.Cells())
-                    {
-                        workSheet.Row(rowIndex).Cell(cellIndex).Value = cell.GetString();
-                        cellIndex += 1;
-                    }
-                    rowIndex += 1;
+                    currentCells.Add(item.CellsUsed(XLCellsUsedOptions.Contents).Select(c => c.Value).ToArray());
                 }
-                hasHeader = true;
+
+                workSheet.Cell(2, 1).InsertData(currentCells);
+                workSheet = PrepareNewSheet(newWorkBook, workSheet);
             }
-            newWorkBook.SaveAs(newFilePath);
-        }
 
-        /// <summary>Join an amount of excel files into one, if excel sheet is full then create a new one an continue joining</summary>
-        /// <param name="filesFolderPath">Folder to use to get the files to join</param>
-        /// <param name="filesSheetNameToUse">Name of the sheet to get the data, if null it will use the first sheet</param>
-        /// <param name="customHeaders">Titles to use in the new Excel file</param>
-        /// <param name="sheetName">Name to use as a template for news excel sheets in the current excel file</param>
-        /// <param name="countEmptyRows">If is true, it will brings empty rows that where use in the file</param>
-        public void Concat(string filesFolderPath, string filesSheetNameToUse = null, IEnumerable<string> customHeaders = null, string sheetName = null, bool countEmptyRows = false)
-        {
-            ValidateFolder(filesFolderPath);
-
-            IXLWorksheet workSheet = sheetName == null ? Workbook.Worksheet(1) : Workbook.Worksheet(sheetName);
-            int rowIndex = workSheet.LastRowUsed().RowNumber() + 1;
-            string currentSheetName = workSheet.Name;
-            bool hasHeader = false;
-
-            foreach (string filePath in Directory.GetFiles(filesFolderPath))
-            {
-                if (!IsValidExtension(filePath))
-                    continue;
-
-                XLWorkbook fileWorkbook = new XLWorkbook(filePath);
-                IXLWorksheet fileWorkSheet = filesSheetNameToUse == null ? fileWorkbook.Worksheet(1) : fileWorkbook.Worksheet(filesSheetNameToUse);
-                IXLRows rows = countEmptyRows ? fileWorkSheet.Rows() : fileWorkSheet.RowsUsed();
-
-                if (!hasHeader && customHeaders != null)
-                {
-                    rowIndex += AddHeaders(workSheet, customHeaders);
-                    hasHeader = true;
-                }
-
-                foreach (IXLRow row in rows.Skip(hasHeader ? 1 : 0))
-                {
-                    int cellIndex = 1;
-                    if (rowIndex > LimitPerSheet + 1)
-                    {
-                        workSheet = PrepareNewSheet(Workbook, workSheet, currentSheetName);
-                        rowIndex = AddHeaders(workSheet, customHeaders);
-                    }
-
-                    foreach (IXLCell cell in row.Cells())
-                    {
-                        workSheet.Row(rowIndex).Cell(cellIndex).Value = cell.GetString();
-                        cellIndex += 1;
-                    }
-                    rowIndex += 1;
-                }
-                hasHeader = true;
-            }
-            Workbook.Save();
+            newWorkBook.Worksheets.Delete(workSheet.Name);
+            Save(newWorkBook, newFilePath);
         }
 
         /// <summary>Save the current excel file changes</summary>
@@ -3725,43 +3410,45 @@ namespace Helpy
             Workbook.SaveAs(path, so);
         }
 
+        private static void Save(XLWorkbook workbook,string path)
+        {
+            SaveOptions so = new SaveOptions()
+            {
+                GenerateCalculationChain = false,
+                EvaluateFormulasBeforeSaving = false,
+                ValidatePackage = false,
+            };
+            workbook.SaveAs(path, so);
+        }
+
+        private static void RemoveTableStyles(IXLTable table)
+        {
+            table.ShowAutoFilter = false;
+            table.Theme = XLTableTheme.None;
+        }
+
         private static bool IsValidExtension(string extension)
         {
             return SupportedExtensions.Contains(Path.GetExtension(extension));
         }
 
-        private static T DictToObject<T>(IDictionary<string, string> dict) where T : new()
+        private static T GetObjectFromRow<T>(IList<string> headers, IXLRow row) where T : new()
         {
             Type type = typeof(T);
             T newObj = new T();
 
-            foreach (KeyValuePair<string, string> keyValue in dict)
+            for (int i = 0; i < headers.Count; i++)
             {
-                if (HasProperty(newObj, keyValue.Key))
+                if (HasProperty(newObj, headers[i]))
                 {
-                    PropertyInfo property = type.GetProperty(keyValue.Key);
+                    PropertyInfo property = type.GetProperty(headers[i]);
                     if (IsValidPropertyType(property.PropertyType))
                     {
-                        property.SetValue(newObj, Convert.ChangeType(keyValue.Value, property.PropertyType), null);
+                        property.SetValue(newObj, Convert.ChangeType(row.Cell(i + 1).Value, property.PropertyType), null);
                     }
                 }
             }
-
             return newObj;
-        }
-
-        private static IDictionary<string, string> ObjectToDict(object obj)
-        {
-            IDictionary<string, string> dict = new Dictionary<string, string>();
-            foreach (PropertyInfo prop in obj.GetType().GetProperties())
-            {
-                Type t = prop.PropertyType;
-                if (t.IsValueType || ValidConvertedValueTypes.Contains(t))
-                {
-                    dict.Add(prop.Name, prop.GetValue(obj).ToString());
-                }
-            }
-            return dict;
         }
 
         private static bool HasProperty(object obj, string name)
@@ -3784,30 +3471,18 @@ namespace Helpy
             return ValidConvertedValueTypes.Contains(propType);
         }
 
-        private static void AssingValuesToRow(IXLRow row, IList<string> values)
-        {
-            for (int i = 0; i < values.Count; i++)
-            {
-                row.Cell(i + 1).Value = values[i];
-            }
-        }
-
-        private static void AssingValuesToRow(IXLRow row, IXLCells values)
-        {
-            int cellIndex = 1;
-            foreach (IXLCell cell in values)
-            {
-                row.Cell(cellIndex + 1).Value = cell.GetString();
-                cellIndex++;
-            }
-        }
-
-        private static IXLWorksheet AddNewSheet(XLWorkbook workbook, string sheetName = null)
+        private static IXLWorksheet AddNewSheet(XLWorkbook workbook)
         {
             IXLWorksheet newWorksheet = null;
-            string newSheetName = sheetName == null ? Guid.NewGuid().ToString().Substring(0, 31) : sheetName + (workbook.Worksheets.Count + 1).ToString();
+            List<string> sheets = workbook.Worksheets.Select(w => w.Name).ToList();            
+            string newSheetName = DefaultSheetName.Substring(0,DefaultSheetName.Length - 1) + (sheets.Count + 1);
+
             if (newSheetName.Length > 31)
                 newSheetName = newSheetName.Substring(0, 31);
+
+            if (sheets.Contains(newSheetName))
+                newSheetName = DateTime.Now.ToString("MM-dd-yyyy h:mm tt");
+
             newWorksheet = workbook.Worksheets.Add(newSheetName);
             return newWorksheet;
         }
@@ -3858,10 +3533,10 @@ namespace Helpy
                 throw new Exception(string.Format("The Filepath {0} is not valid", path));
         }
 
-        private static IXLWorksheet PrepareNewSheet(XLWorkbook Workbook, IXLWorksheet workSheet, string sheetName = null)
+        private static IXLWorksheet PrepareNewSheet(XLWorkbook Workbook, IXLWorksheet workSheet)
         {
-            IEnumerable<string> headers = workSheet.FirstRow().Cells().Select(c => c.GetString());
-            workSheet = AddNewSheet(Workbook, sheetName == null ? workSheet.Name : sheetName);
+            IEnumerable<string> headers = workSheet.FirstRow().CellsUsed(XLCellsUsedOptions.Contents).Select(c => c.GetString());
+            workSheet = AddNewSheet(Workbook);
             AddHeaders(workSheet, headers);
             return workSheet;
         }
@@ -3869,7 +3544,7 @@ namespace Helpy
         private void IsValidLimitPerSheet()
         {
             if (LimitPerSheet > MaxRowLimit)
-                throw new Exception("The row limit cannot be greater than {0}");
+                throw new Exception(string.Format("The row limit cannot be greater than {0}",MaxRowLimit));
         }
     }
 
