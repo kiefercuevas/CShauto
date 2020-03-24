@@ -2662,7 +2662,7 @@ namespace Helpy
 
             foreach (IXLRow row in workSheet.RowsUsed().Skip(customHeaders == null ? 1 : 0))
             {
-                objectList.Add(GetObjectFromRow<T>(headers,row));
+                objectList.Add(GetObjectFromRow<T>(headers, row));
             }
             return objectList;
         }
@@ -2700,7 +2700,7 @@ namespace Helpy
         ///<summary>Get a column of the specified file sheet</summary>
         /// <param name="column">Name of the column title in the excel file sheet</param>
         /// <param name="sheetName">Name of the sheet to get the data, if null it will use the first sheet</param>
-        public IEnumerable<T> GetColumn<T>(string column, string sheetName = null) where T: new()
+        public IEnumerable<T> GetColumn<T>(string column, string sheetName = null) where T : new()
         {
             IXLWorksheet workSheet = string.IsNullOrWhiteSpace(sheetName) ? Workbook.Worksheet(1) : Workbook.Worksheet(sheetName);
             List<string> headers = GetHeaders(workSheet).ToList();
@@ -2810,7 +2810,7 @@ namespace Helpy
             XLWorkbook newWorkBook = new XLWorkbook();
             IXLWorksheet workSheet = sheetName == null ? newWorkBook.Worksheets.Add(DefaultSheetName) : newWorkBook.Worksheets.Add(sheetName);
             int currentDefaultLimit = DefaultLimit == MaxRowLimit ? DefaultLimit - 1 : DefaultLimit;
-            IDictionary<string,object> firstRow = rows.FirstOrDefault();
+            IDictionary<string, object> firstRow = rows.FirstOrDefault();
 
             if (firstRow == null)
                 throw new Exception("There must be at least 1 row in rows data");
@@ -2879,7 +2879,7 @@ namespace Helpy
         ///<summary>Add data to an excel file</summary>
         /// <param name="rows">Data to add to the new excel file as list of list where each list represents a row</param>
         /// <param name="sheetName">Name of the sheet to get the data, if null it will use the first sheet</param>
-        public void Append(IEnumerable<object []> rows, string sheetName = null)
+        public void Append(IEnumerable<object[]> rows, string sheetName = null)
         {
             int iterations = 0;
             int amountOfItems = rows.Count();
@@ -2913,7 +2913,7 @@ namespace Helpy
             int cellIndex = 1;
             IXLRow rowSheet = null;
 
-            if (rowIndex > LimitPerSheet )
+            if (rowIndex > LimitPerSheet)
             {
                 workSheet = PrepareNewSheet(Workbook, workSheet);
                 rowIndex = 2;
@@ -2966,7 +2966,7 @@ namespace Helpy
 
             IXLRow firstRow = workSheet.FirstRowUsed(XLCellsUsedOptions.Contents);
             IXLRow lastRow = workSheet.LastRowUsed(XLCellsUsedOptions.Contents);
-            
+
             int rowIndex = lastRow == null ? 1 : lastRow.RowNumber() + 1;
             int cellIndex = 1;
 
@@ -2976,7 +2976,7 @@ namespace Helpy
                 rowIndex++;
             }
 
-            if (rowIndex > LimitPerSheet )
+            if (rowIndex > LimitPerSheet)
             {
                 workSheet = PrepareNewSheet(Workbook, workSheet);
                 rowIndex = 2;
@@ -3003,7 +3003,7 @@ namespace Helpy
 
             IXLRow firstRow = workSheet.FirstRowUsed(XLCellsUsedOptions.Contents);
             IXLRow lastRow = workSheet.LastRowUsed(XLCellsUsedOptions.Contents);
-            
+
             int rowIndex = lastRow == null ? 1 : lastRow.RowNumber() + 1;
 
             if (firstRow == null && amountOfItems > 0)
@@ -3033,7 +3033,7 @@ namespace Helpy
         public bool HasHeader(string header, string sheetName = null, bool exactMatch = true)
         {
             IXLWorksheet workSheet = string.IsNullOrWhiteSpace(sheetName) ? Workbook.Worksheet(1) : Workbook.Worksheet(sheetName);
-            IXLRow firstRow = workSheet.FirstRowUsed(XLCellsUsedOptions.Contents);
+            IXLRow firstRow = workSheet.FirstRow();
             IEnumerable<string> cells = null;
             string headerCopy = exactMatch ? header : header.ToLower();
 
@@ -3054,7 +3054,7 @@ namespace Helpy
         public bool HasHeader(IEnumerable<string> headers, string sheetName = null, bool exactMatch = true)
         {
             IXLWorksheet workSheet = string.IsNullOrWhiteSpace(sheetName) ? Workbook.Worksheet(1) : Workbook.Worksheet(sheetName);
-            IXLRow firstRow = workSheet.FirstRowUsed(XLCellsUsedOptions.Contents);
+            IXLRow firstRow = workSheet.FirstRow();
             IEnumerable<string> cells = null;
 
             if (firstRow == null)
@@ -3080,7 +3080,7 @@ namespace Helpy
         public bool HasHeaderFromObject<T>(T obj, string sheetName = null, bool exactMatch = true) where T : class
         {
             IXLWorksheet workSheet = string.IsNullOrWhiteSpace(sheetName) ? Workbook.Worksheet(1) : Workbook.Worksheet(sheetName);
-            IXLRow firstRow = workSheet.FirstRowUsed(XLCellsUsedOptions.Contents);
+            IXLRow firstRow = workSheet.FirstRow();
             IEnumerable<string> cells = null;
             IEnumerable<string> headers = obj.GetType().GetProperties().Where(p => IsValidPropertyType(p.PropertyType)).Select(p => p.Name);
 
@@ -3108,7 +3108,7 @@ namespace Helpy
             IEnumerable<string> headers = GetHeaders(workSheet);
 
             workSheet.Clear(XLClearOptions.AllContents);
-            SetHeaders(headers,workSheet);
+            SetHeaders(headers, workSheet);
         }
 
         ///<summary>Clear all rows of a sheet incliding header</summary>
@@ -3130,7 +3130,7 @@ namespace Helpy
             int amountOfItemsToSkip = DefaultLimit * iterations;
             XLWorkbook currentWorkBook = new XLWorkbook(path);
 
-            IXLWorksheet workSheet = sheetName == null ? currentWorkBook.Worksheet(1): currentWorkBook.Worksheet(sheetName);
+            IXLWorksheet workSheet = sheetName == null ? currentWorkBook.Worksheet(1) : currentWorkBook.Worksheet(sheetName);
             IXLRow lastRow = workSheet.LastRowUsed(XLCellsUsedOptions.Contents);
             int rowIndex = (lastRow == null) ? 1 : lastRow.RowNumber() + 1;
 
@@ -3146,7 +3146,7 @@ namespace Helpy
                 workSheet = PrepareNewSheet(currentWorkBook, workSheet);
             }
 
-            Save(currentWorkBook,path);
+            Save(currentWorkBook, path);
         }
 
         /// <summary>Writes data to an excel file</summary>
@@ -3236,8 +3236,8 @@ namespace Helpy
             string filename = string.IsNullOrEmpty(template_name) ? Path.GetFileNameWithoutExtension(DefaultFileName) : Path.GetFileNameWithoutExtension(template_name);
             string extension = string.IsNullOrEmpty(template_name) ? Path.GetExtension(DefaultFileName) : Path.GetExtension(template_name);
 
-            if(!IsValidExtension(extension))
-                throw new Exception(string.Format("The extension {0} is not valid, valid extensions:{1}",extension,string.Join(",",SupportedExtensions)));
+            if (!IsValidExtension(extension))
+                throw new Exception(string.Format("The extension {0} is not valid, valid extensions:{1}", extension, string.Join(",", SupportedExtensions)));
 
             IXLWorksheet workSheet = sheetName == null ? CurrentWorkBook.Worksheet(1) : CurrentWorkBook.Worksheet(sheetName);
             IEnumerable<IXLRow> rows = workSheet.RowsUsed(XLCellsUsedOptions.Contents, r => r.RowNumber() > 1);
@@ -3247,7 +3247,7 @@ namespace Helpy
             int remainderRow = fileRowsNumber % filesQuantity;
             int adittionalRowsPerSheet = remainderRow > 0 ? Convert.ToInt32(Math.Ceiling((double)remainderRow / filesQuantity)) : 0;
             int totalRows = (fileRowsNumber / filesQuantity) + adittionalRowsPerSheet;
-            
+
             int filesIndexName = 1;
             int iterations = 0;
 
@@ -3260,7 +3260,7 @@ namespace Helpy
             while (iterations < filesQuantity)
             {
                 IEnumerable<IXLRow> currentRows = rows.Skip((totalRows * iterations)).Take(totalRows);
-                ICollection<object []> currentCells = new List<object []>();
+                ICollection<object[]> currentCells = new List<object[]>();
 
                 foreach (IXLRow item in currentRows)
                 {
@@ -3268,12 +3268,12 @@ namespace Helpy
                 }
 
                 newWorksheet.Cell(2, 1).InsertData(currentCells);
-                
+
                 Save(newWorbook, fullFileName);
                 newWorbook = new XLWorkbook(XLEventTracking.Disabled);
                 newWorksheet = newWorbook.Worksheets.Add(DefaultSheetName);
                 SetHeaders(newWorbook, headers, newWorksheet.Name);
-                
+
                 filesIndexName++;
                 iterations++;
 
@@ -3361,7 +3361,7 @@ namespace Helpy
                 if (!IsValidExtension(Path.GetExtension(filePath)))
                     continue;
 
-                XLWorkbook fileWorkbook = new XLWorkbook(filePath,XLEventTracking.Disabled);
+                XLWorkbook fileWorkbook = new XLWorkbook(filePath, XLEventTracking.Disabled);
                 IXLWorksheet fileWorkSheet = filesSheetNameToUse == null ? fileWorkbook.Worksheet(1) : fileWorkbook.Worksheet(filesSheetNameToUse);
                 IXLRows rows = fileWorkSheet.RowsUsed(XLCellsUsedOptions.Contents, r => r.RowNumber() > 1);
 
@@ -3410,7 +3410,7 @@ namespace Helpy
             Workbook.SaveAs(path, so);
         }
 
-        private static void Save(XLWorkbook workbook,string path)
+        private static void Save(XLWorkbook workbook, string path)
         {
             SaveOptions so = new SaveOptions()
             {
@@ -3474,8 +3474,8 @@ namespace Helpy
         private static IXLWorksheet AddNewSheet(XLWorkbook workbook)
         {
             IXLWorksheet newWorksheet = null;
-            List<string> sheets = workbook.Worksheets.Select(w => w.Name).ToList();            
-            string newSheetName = DefaultSheetName.Substring(0,DefaultSheetName.Length - 1) + (sheets.Count + 1);
+            List<string> sheets = workbook.Worksheets.Select(w => w.Name).ToList();
+            string newSheetName = DefaultSheetName.Substring(0, DefaultSheetName.Length - 1) + (sheets.Count + 1);
 
             if (newSheetName.Length > 31)
                 newSheetName = newSheetName.Substring(0, 31);
@@ -3544,7 +3544,7 @@ namespace Helpy
         private void IsValidLimitPerSheet()
         {
             if (LimitPerSheet > MaxRowLimit)
-                throw new Exception(string.Format("The row limit cannot be greater than {0}",MaxRowLimit));
+                throw new Exception(string.Format("The row limit cannot be greater than {0}", MaxRowLimit));
         }
     }
 
