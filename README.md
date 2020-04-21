@@ -1,17 +1,13 @@
-# Helpy
+# CShauto
 
-Helpy is an RPA C# library inspired by PyAutoGuid. 
-Provide some methods to manipulate Images, Mouse, Keyboard, Mouse, Microsoft Windows and Excel files.
+CShauto is an RPA C# library that Provide some methods to manipulate Images, Mouse, Keyboard
 
 ## Installation
 
 In order to use the the library you need to install the following nuGet packages.
 
 ```bash
-Install-Package Quellatalo.Nin.TheHands -Version 0.3.0
-Install-Package Quellatalo.Nin.TheEyes -Version 0.3.0
-Install-Package InputSimulator -Version 1.0.4
-Install-Package ClosedXML -Version 0.94.2
+Install-Package CShauto -Version 1.0.0
 ```
 
 Then you need to add some references to the project, for this just
@@ -31,7 +27,7 @@ Finally add this reference in COM menu
 
 For use is library just add the following
 ```C#
-using Helpy;
+using CShauto;
 ```
 
 Here is an example of how to open the remote desktop dialog
@@ -258,151 +254,6 @@ The **ScreenShot** class provide some method to make screenShot
 ```C#
 ScreenShot.Capture("path to save");
 ScreenShot.Capture(region,"path to save");
-```
-
-Excel
----
-The Excel class provide some method to manipulate excel for basic operations like create, read, or add data to an excel files.
-
-```C#
-Excel file = new Excel();
-file.Append(new List<string>() {"VALUE1","VALUE2","VALUE3"});
-file.SetHeaders(new List<string>() { "My header1", "My header2", "MyHeader3" });
-file.Save("My path");
-```
-You can also create an excel file with
-```C#
-Excel.Create("path", rows: myData, sheetName: "name of sheet");
-```
-
-Reading an Excel File
----
-To read a file just use the static ***load*** method from Excel class 
-```C#
-Excel myExcel = Excel.Load("path");
-//Getting the data
-IEnumerable<IDictionary<string,string>> data =  myExcel.Extract("sheetName");
-//Each row represents a dictionary collection where each key is a column header
-
-//Getting a part of the data
-IEnumerable<IDictionary<string,string>> data =  myExcel.Paginate(startRow:20,endRow:50,sheetName:"sheetName");
-
-```
-
-If we have a file with columns Name,Age,and LastName we can get the information like this 
-
-```C#
-foreach (IDictionary<string, string> row in data){
-    string Name = row["Name"];
-    Console.WriteLine(Name);
-}
-```
-Be careful that your file doesnt have duplicate column headers beacuse this will case
-that the first header is overwritten by the others until the last duplicate header. 
-
-
-Excel with objects
----
-We can performs the above operations using objects instead of plain list of strings
-```C#
-
-Excel file = new Excel();
-
-//My person object
-Person John = Person();
-John.Name = "John";
-John.Age = 22;
-John.LastName = "Smith";
-
-//Appended an object to excel
-file.AppendFromObject<Person>(John,"sheet name to use");
-file.Save();
-
-//Reading the data
-IEnumerable<Person> people = file.ExtractFromObject<Person>(...);
-
-//Reading part of the data
-IEnumerable<Person> people = file.PaginateFromObject<Person>(...);
-
-//Static methods
-Excel.CreateFromObject<Person>(...);
-Excel.WriteFromObject<Person>(...);
-```
-
-By doing this you can add objects to the excel files, name of the properties inside the object will be use as ***header*** for the file or ***keys*** for rows.
-
-Splitting and Joining
----
-This class also provide some instance and static method to split a file into multiple ones an also join them into one.
-
-To split a file
----
-```C#
-int filesQuantity = 2;
-List<string> newHeaders = new List<string>() { "header1", "header2" };
-Excel file = new Excel();
-file.SplitFile("folder for new files",filesQuantity,"sheet to get the data",newHeaders,"MyFilesNames");
-
-//split the data by a quantity of rows specified
-int rowQuantity = 50000;
-file.SplitRows("folder for new files", rowQuantity, "sheet to get the data", newHeaders, "MyFilesNames");
-
-//Static way
-Excel.SplitByFiles("newFilesPath", "folder for new files", filesQuantity, "sheet to get the data", newHeaders, "MyFilesNames");
-
-Excel.SplitByRows("newFilesPath", "folder for new files", rowQuantity, "sheet to get the data", newHeaders, "MyFilesNames");
-```
-
-To join a file
----
-```C#
-Excel file = new Excel();
-List<string> newHeaders = new List<string>() { "header1", "header2" };
-
-//Join the data of multiple files into the current files
-file.Concat("forder of all files to concat", "name of files sheet to use",newHeaders, "sheet name to use");
-
-//Static way
-Excel.Join("forder of all files to concat", "new file path", "sheet name for the new file", "name of files sheet to use", newHeaders);
-```
-
-
-
-Reset and Clear
----
-Excel class provide some method to **Clear** a sheet and **reset** a sheet, both to almost the same but the subtile difference is that Clear erase all the rows including the headers one, but reset dont.
-
-
-
-countEmptyRows param
----
-Some of excel methods provided by this class have the countEmptyRows param, this is because closeXML library return rows even if those were delete in the file, so with that param set to true you can only take the rows that are being use by the file.
-
-
-
-Information about the Excel class
----
-If you want to get information like supported types or how many rows you can add into a sheet you can use the following properties
-
-
-```C#
-/Get or set a default name for generated excel files in split or join methods
-Excel.DefaultFileName;
-
-//Get or set the a limit for rows in a sheet
-Excel.DefaultLimit;
-
-//Get or set a default sheet name for a file
-Excel.DefaultSheetName;
-
-//Returns the limit or rows of sheets
-Excel.MaxRowLimit;
-
-//Returns the supported excel extensions
-Excel.SupportedExtensions;
-
-//Get or set types to use in object to excel methods
-Excel.ValidConvertedValueTypes;
 ```
 
 ## License
