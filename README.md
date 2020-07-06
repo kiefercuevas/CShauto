@@ -39,7 +39,7 @@ KeyBoard.Shortcut(Shortcuts.WINDOW_RUN);
 Helpers.Wait(2000);
 KeyBoard.Write("mstsc");
 KeyBoard.Press(KEYCODE.ENTER);
-Window remoteDesktop = Window.GetWindowWithParcialName("remote desktop connection", attempts: 10);
+Window remoteDesktop = Window.GetWindowWithPartialName("remote desktop connection", attempts: 10);
 remoteDesktop.Focus();
 
 ```
@@ -171,7 +171,7 @@ Window.GetActive();
 Window.GetWindow("window name");       
 Window.GetWindowWithParcialName("window name");
 Window.GetWindows("Windows name");            
-Window.GetWindowsWithParcialName("window name");
+Window.GetWindowWithPartialName("window name");
 ```
 
 Explorer window
