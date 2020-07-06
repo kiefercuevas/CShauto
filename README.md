@@ -7,7 +7,7 @@ CShauto is an RPA C# library that Provide some methods to manipulate Images, Mou
 In order to use the the library you need to install the following nuGet packages.
 
 ```bash
-Install-Package CShauto -Version 1.0.0
+Install-Package CShauto -Version 1.0.1
 ```
 
 Then you need to add some references to the project, for this just
